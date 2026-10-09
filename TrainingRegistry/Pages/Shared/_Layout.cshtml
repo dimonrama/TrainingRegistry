@@ -1,0 +1,85 @@
+@{
+    var isAuth = User.Identity?.IsAuthenticated == true;
+    var isAdmin = User.IsInRole(Roles.Admin);
+    var currentPath = Context.Request.Path.Value ?? "/";
+
+    // пункты меню; Ready = страница уже сделана, остальные серые
+    var menu = new (string Title, string Url, bool Ready, bool AdminOnly)[]
+    {
+        ("Главная",                 "/",                true,  false),
+        ("Организации",             "/Organizations",   true,  false),
+        ("Сотрудники",              "/People",          true,  false),
+        ("Программы обучения",      "/Programs",        true,  false),
+        ("Группы обучения",         "/Groups",          true,  false),
+        ("Уведомления",             "/Notifications",   true,  false),
+        ("Договоры",                "/Contracts",       true,  false),
+        ("Администрирование",       "/Admin/Users",     true,  true),
+    };
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Учёт обучающихся</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+@if (isAuth)
+{
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="app-brand">Учёт обучающихся</div>
+            <nav class="nav flex-column">
+                @foreach (var item in menu.Where(m => !m.AdminOnly || isAdmin))
+                {
+                    var active = item.Url == "/" ? currentPath == "/" : currentPath.StartsWith(item.Url, StringComparison.OrdinalIgnoreCase);
+                    if (item.Ready)
+                    {
+                        <a class="nav-link @(active ? "active" : "")" href="@item.Url">@item.Title</a>
+                    }
+                    else
+                    {
+                        <span class="nav-link disabled" title="Раздел в разработке">@item.Title</span>
+                    }
+                }
+            </nav>
+            <div class="app-user">
+                <div class="small text-white-50">@User.Identity!.Name</div>
+                <div class="fw-semibold">@User.FindFirst(AppClaims.DisplayName)?.Value</div>
+                <form method="post" asp-page="/Account/Logout" class="mt-2">
+                    <button type="submit" class="btn btn-sm btn-outline-light w-100">Выйти</button>
+                </form>
+            </div>
+        </aside>
+        <main class="app-content">
+            @if (TempData["Success"] is string ok)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">@ok<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button></div>
+            }
+            @if (TempData["Error"] is string err)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">@err<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button></div>
+            }
+            @RenderBody()
+            @if (Context.Items["RequestTimer"] is System.Diagnostics.Stopwatch timer)
+            {
+                <div class="page-timing">Страница сформирована за @timer.ElapsedMilliseconds мс</div>
+            }
+        </main>
+    </div>
+}
+else
+{
+    <main class="app-content">
+        @RenderBody()
+    </main>
+}
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

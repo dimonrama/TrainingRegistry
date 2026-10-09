@@ -1,0 +1,79 @@
+@page
+@model TrainingRegistry.Pages.Contracts.IndexModel
+@{
+    ViewData["Title"] = "Договоры";
+}
+
+<div class="page-head">
+    <h1>Договоры</h1>
+    <span class="text-muted small">Договор формируется из карточки группы</span>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-center">
+    <div class="col-md-4">
+        <input type="search" name="Search" value="@Model.Search" class="form-control" placeholder="Номер, заказчик, группа, программа" />
+    </div>
+    <div class="col-md-2">
+        <select name="Year" class="form-select" aria-label="Год">
+            <option value="">Все годы</option>
+            @foreach (var y in Model.Years)
+            {
+                <option value="@y" selected="@(Model.Year == y)">@y</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Найти</button>
+        <a class="btn btn-link" asp-page="./Index">Сбросить</a>
+    </div>
+    <div class="col-auto ms-auto form-check form-switch">
+        <input type="checkbox" class="form-check-input" id="auditToggle" data-toggle-audit data-target="#contractTable" />
+        <label class="form-check-label" for="auditToggle">Кто и когда изменил</label>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <table class="table table-hover table-list mb-0" id="contractTable">
+        <thead>
+            <tr>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("number")'>Номер</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("date")'>Дата</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("customer")'>Заказчик</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("group")'>Группа</a></th>
+                <th class="text-end"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("students")'>Обучающихся</a></th>
+                <th class="text-end"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("total")'>Сумма</a></th>
+                <th>Файлы</th>
+                <th class="col-audit"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("updatedBy")'>Кто изменил</a></th>
+                <th class="col-audit"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("updated")'>Дата изменения</a></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var c in Model.Result.Items)
+        {
+            <tr>
+                <td><a asp-page="./Details" asp-route-id="@c.Id">@c.Number</a></td>
+                <td class="text-nowrap">@Fmt.DateTimeLocal(c.CreatedAt).Split(',')[0]</td>
+                <td>@c.CustomerName</td>
+                <td><a asp-page="/Groups/Details" asp-route-id="@c.GroupId">@c.GroupName</a></td>
+                <td class="text-end">@c.StudentsCount</td>
+                <td class="text-end text-nowrap">@Fmt.Money(c.TotalPrice)</td>
+                <td class="text-nowrap">
+                    <a asp-page="./Download" asp-route-id="@c.Id" asp-route-format="docx">Word</a> ·
+                    <a asp-page="./Download" asp-route-id="@c.Id" asp-route-format="pdf">PDF</a>
+                </td>
+                <td class="col-audit">@(c.UpdatedBy ?? "—")</td>
+                <td class="col-audit">@Fmt.DateTimeLocal(c.UpdatedAt)</td>
+            </tr>
+        }
+        @if (!Model.Result.Items.Any())
+        {
+            <tr><td colspan="9" class="text-center text-muted py-4">Договоров пока нет</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted small">Всего: @Model.Result.TotalCount</div>
+    <partial name="_Pager" model="(Model.Result.Page, Model.Result.TotalPages)" />
+</div>

@@ -1,0 +1,100 @@
+@page "{id:int?}"
+@model TrainingRegistry.Pages.People.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Новый сотрудник" : "Редактирование сотрудника";
+}
+
+<div class="page-head">
+    <h1>@ViewData["Title"]</h1>
+</div>
+
+<form method="post" class="card shadow-sm">
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="Item.LastName" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="Item.LastName" class="form-control" />
+                <span asp-validation-for="Item.LastName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.FirstName" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="Item.FirstName" class="form-control" />
+                <span asp-validation-for="Item.FirstName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.MiddleName" class="form-label"></label>
+                <input asp-for="Item.MiddleName" class="form-control" />
+                <span asp-validation-for="Item.MiddleName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.BirthDate" class="form-label"></label>
+                <input asp-for="Item.BirthDate" class="form-control" type="date" />
+                <span asp-validation-for="Item.BirthDate" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.Phone" class="form-label"></label>
+                <input asp-for="Item.Phone" class="form-control" />
+                <span asp-validation-for="Item.Phone" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.Email" class="form-label"></label>
+                <input asp-for="Item.Email" class="form-control" type="email" />
+                <span asp-validation-for="Item.Email" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Item.OrganizationId" class="form-label"></label>
+                <select asp-for="Item.OrganizationId" class="form-select" asp-items="Model.Organizations">
+                    <option value="">— Физическое лицо (без организации) —</option>
+                </select>
+                <span asp-validation-for="Item.OrganizationId" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Item.Position" class="form-label"></label>
+                <input asp-for="Item.Position" class="form-control" />
+                <span asp-validation-for="Item.Position" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.Status" class="form-label"></label> <span class="text-danger">*</span>
+                <select asp-for="Item.Status" class="form-select" asp-items="Html.GetEnumSelectList<PersonStatus>()" id="statusSelect"></select>
+                <span asp-validation-for="Item.Status" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4" id="dismissalBox">
+                <label asp-for="Item.DismissalDate" class="form-label"></label>
+                <input asp-for="Item.DismissalDate" class="form-control" type="date" />
+                <div class="form-text">Если не указать, будет проставлена сегодняшняя дата.</div>
+                <span asp-validation-for="Item.DismissalDate" class="text-danger small"></span>
+            </div>
+        </div>
+
+        @if (!Model.IsNew)
+        {
+            <partial name="_AuditInfo" model="Model.Item" />
+        }
+    </div>
+    <div class="card-footer d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        @if (Model.IsNew)
+        {
+            <a class="btn btn-outline-secondary" asp-page="./Index">Отмена</a>
+        }
+        else
+        {
+            <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.Item.Id">Отмена</a>
+        }
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var select = document.getElementById('statusSelect');
+            var box = document.getElementById('dismissalBox');
+            function update() { box.style.display = select.value === 'Dismissed' || select.value === '1' ? '' : 'none'; }
+            select.addEventListener('change', update);
+            update();
+        })();
+    </script>
+}

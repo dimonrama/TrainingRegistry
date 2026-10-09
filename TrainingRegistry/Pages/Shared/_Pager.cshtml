@@ -1,0 +1,24 @@
+@model (int Page, int TotalPages)
+@{
+    string Link(int p)
+    {
+        var query = Context.Request.Query
+            .Where(q => q.Key != "PageNo")
+            .Select(q => $"{Uri.EscapeDataString(q.Key)}={Uri.EscapeDataString(q.Value.ToString())}")
+            .Append($"PageNo={p}");
+        return "?" + string.Join("&", query);
+    }
+}
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Страницы">
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item @(Model.Page <= 1 ? "disabled" : "")"><a class="page-link" href="@Link(Model.Page - 1)">«</a></li>
+            @for (var p = Math.Max(1, Model.Page - 3); p <= Math.Min(Model.TotalPages, Model.Page + 3); p++)
+            {
+                <li class="page-item @(p == Model.Page ? "active" : "")"><a class="page-link" href="@Link(p)">@p</a></li>
+            }
+            <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")"><a class="page-link" href="@Link(Model.Page + 1)">»</a></li>
+        </ul>
+    </nav>
+}

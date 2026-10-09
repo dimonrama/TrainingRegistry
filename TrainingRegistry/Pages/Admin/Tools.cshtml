@@ -1,0 +1,62 @@
+@page
+@model ToolsModel
+@{
+    ViewData["Title"] = "Тестовые данные";
+    ViewData["AdminTab"] = "tools";
+}
+
+<div class="page-head">
+    <h1>Администрирование</h1>
+</div>
+
+<partial name="_AdminTabs" />
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Демо-данные</h5>
+                <p class="text-muted">
+                    Небольшой набор для показа системы: 5 организаций, сотрудники, 6 программ, архивные и текущие группы,
+                    записи об обучении с разным сроком до повторного (красные, жёлтые и зелёные уведомления).
+                    Добавляются только в пустую систему и остаются как обычные записи.
+                </p>
+                <form method="post" asp-page-handler="Demo">
+                    <button type="submit" class="btn btn-primary" disabled="@Model.HasData">Добавить демо-данные</button>
+                    @if (Model.HasData)
+                    {
+                        <span class="text-muted small ms-2">В системе уже есть данные</span>
+                    }
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Проверка быстродействия</h5>
+                <p class="text-muted">
+                    Добавляет тестовых сотрудников (каждому 1–3 записи об обучении) и тестовые организации и группы.
+                    Все тестовые записи помечены и удаляются кнопкой ниже. В журнал действий пишется одна строка.
+                    Время формирования страницы видно внизу каждой страницы.
+                </p>
+                <p class="mb-2">
+                    Сейчас в системе: сотрудников <strong>@Model.PeopleTotal</strong>, записей об обучении <strong>@Model.EnrollmentsTotal</strong>,
+                    из них тестовых сотрудников <strong>@Model.LoadPeople</strong>.
+                </p>
+                <form method="post" asp-page-handler="Load" class="d-flex gap-2 align-items-center mb-2">
+                    <select name="count" class="form-select w-auto">
+                        <option value="1000">1 000</option>
+                        <option value="10000" selected>10 000</option>
+                    </select>
+                    <button type="submit" class="btn btn-warning">Добавить тестовых сотрудников</button>
+                </form>
+                <form method="post" asp-page-handler="Remove"
+                      onsubmit="return confirm('Удалить все тестовые данные?');">
+                    <button type="submit" class="btn btn-outline-danger" disabled="@(Model.LoadPeople == 0)">Удалить тестовые данные</button>
+                </form>
+                <p class="text-muted small mt-2 mb-0">Загрузка 10 000 сотрудников занимает несколько секунд — страница ответит после завершения.</p>
+            </div>
+        </div>
+    </div>
+</div>

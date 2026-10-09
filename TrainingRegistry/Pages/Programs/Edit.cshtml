@@ -1,0 +1,92 @@
+@page "{id:int?}"
+@model TrainingRegistry.Pages.Programs.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Новая программа обучения" : "Программа обучения";
+}
+
+<div class="page-head">
+    <h1>@ViewData["Title"]</h1>
+</div>
+
+<form method="post" class="card shadow-sm">
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label asp-for="Item.Name" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="Item.Name" class="form-control" />
+                <span asp-validation-for="Item.Name" class="text-danger small"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Item.Description" class="form-label"></label>
+                <textarea asp-for="Item.Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Item.Description" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.Price" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="Item.Price" class="form-control" type="number" step="0.01" min="0" />
+                <span asp-validation-for="Item.Price" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.RequiredEducation" class="form-label"></label>
+                <select asp-for="Item.RequiredEducation" class="form-select" asp-items="Html.GetEnumSelectList<RequiredEducation>()"></select>
+                <span asp-validation-for="Item.RequiredEducation" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.Status" class="form-label"></label> <span class="text-danger">*</span>
+                <select asp-for="Item.Status" class="form-select" asp-items="Html.GetEnumSelectList<ProgramStatus>()"></select>
+                <span asp-validation-for="Item.Status" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Item.Recurrence" class="form-label"></label> <span class="text-danger">*</span>
+                <select asp-for="Item.Recurrence" class="form-select" id="recurrenceSelect" asp-items="Html.GetEnumSelectList<Recurrence>()"></select>
+                <span asp-validation-for="Item.Recurrence" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4" id="customMonthsBox">
+                <label asp-for="Item.CustomMonths" class="form-label"></label>
+                <input asp-for="Item.CustomMonths" class="form-control" type="number" min="1" max="600" />
+                <span asp-validation-for="Item.CustomMonths" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.NotifyDaysBefore" class="form-label"></label>
+                <input asp-for="Item.NotifyDaysBefore" class="form-control" type="number" min="1" max="3650" placeholder="@TrainingProgram.DefaultNotifyDaysBefore" />
+                <div class="form-text">Если не заполнено — @TrainingProgram.DefaultNotifyDaysBefore дней.</div>
+                <span asp-validation-for="Item.NotifyDaysBefore" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Item.Duration" class="form-label"></label>
+                <input asp-for="Item.Duration" class="form-control" type="number" min="1" />
+                <span asp-validation-for="Item.Duration" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.DurationUnit" class="form-label"></label>
+                <select asp-for="Item.DurationUnit" class="form-select" asp-items="Html.GetEnumSelectList<DurationUnit>()"></select>
+            </div>
+        </div>
+
+        @if (!Model.IsNew)
+        {
+            <partial name="_AuditInfo" model="Model.Item" />
+        }
+    </div>
+    <div class="card-footer d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <a class="btn btn-outline-secondary" asp-page="./Index">К списку</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var select = document.getElementById('recurrenceSelect');
+            var box = document.getElementById('customMonthsBox');
+            function update() { box.style.display = select.value === 'Custom' || select.value === '4' ? '' : 'none'; }
+            select.addEventListener('change', update);
+            update();
+        })();
+    </script>
+}

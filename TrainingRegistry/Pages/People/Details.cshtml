@@ -1,0 +1,134 @@
+@page "{id:int}"
+@model TrainingRegistry.Pages.People.DetailsModel
+@{
+    ViewData["Title"] = Model.Item.FullName;
+    var canEdit = User.CanEditPeople();
+}
+
+<div class="page-head">
+    <div>
+        <h1>@Model.Item.FullName</h1>
+        @if (Model.Item.IsDismissed)
+        {
+            <span class="badge text-bg-secondary">Уволен @Fmt.Date(Model.Item.DismissalDate)</span>
+        }
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-page="./Index">К списку</a>
+        @if (canEdit)
+        {
+            <a class="btn btn-primary" asp-page="./Edit" asp-route-id="@Model.Item.Id">Редактировать</a>
+            <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Item.Id"
+                  onsubmit="return confirm('Удалить сотрудника?');">
+                <button type="submit" class="btn btn-outline-danger">Удалить</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Организация</dt>
+            <dd class="col-sm-9">
+                @if (Model.Item.OrganizationId != null)
+                {
+                    <a asp-page="/Organizations/Details" asp-route-id="@Model.Item.OrganizationId">@Model.OrganizationName</a>
+                }
+                else
+                {
+                    <span class="text-muted">Физическое лицо</span>
+                }
+            </dd>
+            <dt class="col-sm-3">Должность</dt>
+            <dd class="col-sm-9">@(Model.Item.Position ?? "—")</dd>
+            <dt class="col-sm-3">Дата рождения</dt>
+            <dd class="col-sm-9">@Fmt.Date(Model.Item.BirthDate)</dd>
+            <dt class="col-sm-3">Телефон</dt>
+            <dd class="col-sm-9">@(Model.Item.Phone ?? "—")</dd>
+            <dt class="col-sm-3">Электронная почта</dt>
+            <dd class="col-sm-9">@(Model.Item.Email ?? "—")</dd>
+            <dt class="col-sm-3">Статус</dt>
+            <dd class="col-sm-9">@Model.Item.Status.GetDisplayName()</dd>
+        </dl>
+        <partial name="_AuditInfo" model="Model.Item" />
+    </div>
+</div>
+
+<div class="page-head">
+    <h2 class="h4 mb-0">Образование</h2>
+    @if (canEdit)
+    {
+        <a class="btn btn-sm btn-primary" asp-page="./Education" asp-route-personId="@Model.Item.Id">Добавить запись</a>
+    }
+</div>
+
+<div class="card shadow-sm mb-4">
+    <table class="table mb-0">
+        <thead>
+            <tr><th>Уровень</th><th>Учебное заведение</th><th>Год</th><th>Специальность</th><th>Документ</th>@if (canEdit){<th></th>}</tr>
+        </thead>
+        <tbody>
+        @foreach (var e in Model.Educations)
+        {
+            <tr>
+                <td>@e.Level.GetDisplayName()</td>
+                <td>@e.InstitutionName</td>
+                <td>@(e.GraduationYear?.ToString() ?? "—")</td>
+                <td>@(e.Specialty ?? "—")</td>
+                <td>
+                    @if (e.FilePath != null)
+                    {
+                        <a asp-page="./EducationFile" asp-route-id="@e.Id" target="_blank">@(e.OriginalFileName ?? "Открыть")</a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">нет файла</span>
+                    }
+                </td>
+                @if (canEdit)
+                {
+                    <td class="text-end text-nowrap">
+                        <a class="btn btn-sm btn-outline-secondary" asp-page="./Education" asp-route-personId="@Model.Item.Id" asp-route-id="@e.Id">Изменить</a>
+                        <form method="post" asp-page-handler="DeleteEducation" asp-route-id="@Model.Item.Id" asp-route-educationId="@e.Id"
+                              class="d-inline" onsubmit="return confirm('Удалить запись об образовании?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                        </form>
+                    </td>
+                }
+            </tr>
+        }
+        @if (!Model.Educations.Any())
+        {
+            <tr><td colspan="6" class="text-center text-muted py-4">Сведения об образовании не внесены</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<h2 class="h4 mb-3">История обучения</h2>
+<div class="card shadow-sm">
+    <table class="table mb-0">
+        <thead>
+            <tr><th>Программа</th><th>Группа</th><th>Период</th><th>Статус</th><th>Пройдено</th><th>Следующее обучение</th><th>Удостоверение</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var h in Model.History)
+        {
+            <tr>
+                <td>@h.ProgramName</td>
+                <td>@h.GroupName</td>
+                <td>@Fmt.Date(h.StartDate) — @Fmt.Date(h.EndDate)</td>
+                <td>@h.Status.GetDisplayName()</td>
+                <td>@Fmt.Date(h.CompletedDate)</td>
+                <td>@Fmt.Date(h.NextTrainingDate)</td>
+                <td>@(h.CertificateNumber ?? "—")</td>
+            </tr>
+        }
+        @if (!Model.History.Any())
+        {
+            <tr><td colspan="7" class="text-center text-muted py-4">Сотрудник ещё не проходил обучение</td></tr>
+        }
+        </tbody>
+    </table>
+</div>

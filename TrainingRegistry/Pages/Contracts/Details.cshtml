@@ -1,0 +1,73 @@
+@page "{id:int}"
+@model TrainingRegistry.Pages.Contracts.DetailsModel
+@{
+    ViewData["Title"] = "Договор " + Model.Item.Number;
+}
+
+<div class="page-head">
+    <div>
+        <h1>Договор № @Model.Item.Number</h1>
+        <span class="text-muted">от @Fmt.Date(Fmt.ToLocalDate(Model.Item.CreatedAt))</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-page="./Index">К списку</a>
+        <a class="btn btn-primary" asp-page="./Download" asp-route-id="@Model.Item.Id" asp-route-format="docx">Скачать Word</a>
+        <a class="btn btn-primary" asp-page="./Download" asp-route-id="@Model.Item.Id" asp-route-format="pdf">Скачать PDF</a>
+        <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Item.Id" onsubmit="return confirm('Удалить договор? Его номер повторно использован не будет.');">
+            <button type="submit" class="btn btn-outline-danger">Удалить</button>
+        </form>
+    </div>
+</div>
+
+@if (Model.OutOfDate)
+{
+    <div class="alert alert-warning d-flex justify-content-between align-items-center">
+        <span>Состав группы изменился: в договоре @Model.Item.StudentsCount чел., сейчас у заказчика @Model.Students.Count чел.</span>
+        <form method="post" asp-page-handler="Regenerate" asp-route-id="@Model.Item.Id">
+            <button type="submit" class="btn btn-sm btn-warning">Обновить документы</button>
+        </form>
+    </div>
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Заказчик</dt>
+            <dd class="col-sm-9">
+                @if (Model.CustomerOrganizationId != null)
+                {
+                    <a asp-page="/Organizations/Details" asp-route-id="@Model.CustomerOrganizationId">@Model.CustomerName</a>
+                }
+                else
+                {
+                    @Model.CustomerName
+                }
+            </dd>
+            <dt class="col-sm-3">Группа</dt>
+            <dd class="col-sm-9"><a asp-page="/Groups/Details" asp-route-id="@Model.Item.GroupId">@Model.GroupName</a></dd>
+            <dt class="col-sm-3">Программа</dt>
+            <dd class="col-sm-9">@Model.ProgramName</dd>
+            <dt class="col-sm-3">Стоимость за человека</dt>
+            <dd class="col-sm-9">@Fmt.Money(Model.Item.PricePerPerson)</dd>
+            <dt class="col-sm-3">Обучающихся</dt>
+            <dd class="col-sm-9">@Model.Item.StudentsCount</dd>
+            <dt class="col-sm-3">Итого</dt>
+            <dd class="col-sm-9 fw-semibold">@Fmt.Money(Model.Item.TotalPrice) <span class="text-muted fw-normal">(@RuWords.Rubles(Model.Item.TotalPrice))</span></dd>
+        </dl>
+        <partial name="_AuditInfo" model="Model.Item" />
+    </div>
+</div>
+
+<h2 class="h4 mb-3">Обучающиеся</h2>
+<div class="card shadow-sm">
+    <table class="table mb-0">
+        <thead><tr><th>№</th><th>ФИО</th><th>Должность</th></tr></thead>
+        <tbody>
+        @{ var i = 1; }
+        @foreach (var s in Model.Students)
+        {
+            <tr><td>@(i++)</td><td>@s.FullName</td><td>@(string.IsNullOrEmpty(s.Position) ? "—" : s.Position)</td></tr>
+        }
+        </tbody>
+    </table>
+</div>

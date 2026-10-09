@@ -1,0 +1,68 @@
+@page "{id:int?}"
+@model TrainingRegistry.Pages.Groups.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Новая группа" : "Редактирование группы";
+}
+
+<div class="page-head">
+    <h1>@ViewData["Title"]</h1>
+</div>
+
+<form method="post" class="card shadow-sm">
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label asp-for="Item.ProgramId" class="form-label"></label> <span class="text-danger">*</span>
+                <select asp-for="Item.ProgramId" class="form-select" asp-items="Model.Programs">
+                    <option value="">— выберите программу —</option>
+                </select>
+                <span asp-validation-for="Item.ProgramId" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.Status" class="form-label"></label>
+                <select asp-for="Item.Status" class="form-select" asp-items="Html.GetEnumSelectList<GroupStatus>()"></select>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.StartDate" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="Item.StartDate" class="form-control" type="date" />
+                <span asp-validation-for="Item.StartDate" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.EndDate" class="form-label"></label>
+                <input asp-for="Item.EndDate" class="form-control" type="date" />
+                <span asp-validation-for="Item.EndDate" class="text-danger small"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Item.Name" class="form-label"></label>
+                <input asp-for="Item.Name" class="form-control" data-val="false" placeholder="Если оставить пустым — «Программа, дата начала»" />
+                <span asp-validation-for="Item.Name" class="text-danger small"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Item.Note" class="form-label"></label>
+                <textarea asp-for="Item.Note" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+
+        @if (!Model.IsNew)
+        {
+            <partial name="_AuditInfo" model="Model.Item" />
+        }
+    </div>
+    <div class="card-footer d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        @if (Model.IsNew)
+        {
+            <a class="btn btn-outline-secondary" asp-page="./Index">Отмена</a>
+        }
+        else
+        {
+            <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.Item.Id">Отмена</a>
+        }
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

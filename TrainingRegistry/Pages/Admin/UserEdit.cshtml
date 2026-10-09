@@ -1,0 +1,106 @@
+@page "{id:int?}"
+@model TrainingRegistry.Pages.Admin.UserEditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Новый пользователь" : "Пользователь " + Model.Item.Login;
+    ViewData["AdminTab"] = "users";
+}
+
+<div class="page-head">
+    <h1>@ViewData["Title"]</h1>
+</div>
+
+<partial name="_AdminTabs" />
+
+<form method="post" class="card shadow-sm">
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        @if (Model.IsSelf)
+        {
+            <div class="alert alert-info py-2">Это ваша учётная запись. Если вы смените себе пароль или права, вход придётся выполнить заново.</div>
+        }
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="Item.FullName" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="Item.FullName" class="form-control" />
+                <span asp-validation-for="Item.FullName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Item.Login" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="Item.Login" class="form-control" autocomplete="off" />
+                <span asp-validation-for="Item.Login" class="text-danger small"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Item.Role" class="form-label"></label>
+                <select asp-for="Item.Role" class="form-select" id="roleSelect" asp-items="Html.GetEnumSelectList<UserRole>()"></select>
+                <span asp-validation-for="Item.Role" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12" id="permBox">
+                <div class="fw-semibold mb-1">Права методиста</div>
+                <div class="form-check">
+                    <input asp-for="Item.CanEditOrganizations" class="form-check-input" />
+                    <label asp-for="Item.CanEditOrganizations" class="form-check-label"></label>
+                </div>
+                <div class="form-check">
+                    <input asp-for="Item.CanEditPeople" class="form-check-input" />
+                    <label asp-for="Item.CanEditPeople" class="form-check-label"></label>
+                </div>
+                <div class="form-text">Просматривать данные методист может всегда. Администратор может всё.</div>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="NewPassword" class="form-label">@(Model.IsNew ? "Пароль" : "Новый пароль")</label>
+                @if (Model.IsNew) { <span class="text-danger">*</span> }
+                <input asp-for="NewPassword" type="password" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="NewPassword" class="text-danger small"></span>
+                <div class="form-text">@(Model.IsNew ? "" : "Оставьте пустым, чтобы не менять. ")Не короче 8 символов, буквы и цифры.</div>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="ConfirmPassword" class="form-label">Повторите пароль</label>
+                <input asp-for="ConfirmPassword" type="password" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <div class="form-check form-switch">
+                    <input asp-for="Item.IsBlocked" class="form-check-input" />
+                    <label asp-for="Item.IsBlocked" class="form-check-label"></label>
+                </div>
+                <span asp-validation-for="Item.IsBlocked" class="text-danger small"></span>
+                <div class="form-text">Заблокированный пользователь теряет доступ сразу, без ожидания окончания сессии.</div>
+            </div>
+        </div>
+
+        @if (!Model.IsNew)
+        {
+            <div class="audit-info">
+                <div>Последняя авторизация: @Fmt.DateTimeLocal(Model.Item.LastLoginAt)</div>
+            </div>
+            <partial name="_AuditInfo" model="Model.Item" />
+        }
+    </div>
+    <div class="card-footer d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <a class="btn btn-outline-secondary" asp-page="./Users">К списку</a>
+        @if (!Model.IsNew && !Model.IsSelf)
+        {
+            <button type="submit" class="btn btn-outline-danger ms-auto" asp-page-handler="Delete" asp-route-id="@Model.Item.Id" formnovalidate
+                    onclick="return confirm('Удалить пользователя?');">Удалить</button>
+        }
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var select = document.getElementById('roleSelect');
+            var box = document.getElementById('permBox');
+            function update() { box.style.display = (select.value === 'Methodist' || select.value === '1') ? '' : 'none'; }
+            select.addEventListener('change', update);
+            update();
+        })();
+    </script>
+}

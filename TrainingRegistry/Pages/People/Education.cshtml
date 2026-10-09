@@ -1,0 +1,61 @@
+@page "{personId:int}/{id:int?}"
+@model TrainingRegistry.Pages.People.EducationModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Новая запись об образовании" : "Запись об образовании";
+}
+
+<div class="page-head">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <div class="text-muted">@Model.PersonName</div>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="card shadow-sm">
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="Item.Level" class="form-label"></label>
+                <select asp-for="Item.Level" class="form-select" asp-items="Html.GetEnumSelectList<EducationLevel>()"></select>
+                <span asp-validation-for="Item.Level" class="text-danger small"></span>
+            </div>
+            <div class="col-md-8">
+                <label asp-for="Item.InstitutionName" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="Item.InstitutionName" class="form-control" />
+                <span asp-validation-for="Item.InstitutionName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.GraduationYear" class="form-label"></label>
+                <input asp-for="Item.GraduationYear" class="form-control" type="number" min="1950" max="2100" />
+                <span asp-validation-for="Item.GraduationYear" class="text-danger small"></span>
+            </div>
+            <div class="col-md-8">
+                <label asp-for="Item.Specialty" class="form-label"></label>
+                <input asp-for="Item.Specialty" class="form-control" />
+                <span asp-validation-for="Item.Specialty" class="text-danger small"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Upload" class="form-label">Скан или фото документа об образовании</label>
+                <input asp-for="Upload" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+                <div class="form-text">
+                    PDF, JPG или PNG, не больше 10 МБ.
+                    @if (Model.Item.FilePath != null)
+                    {
+                        <span>Сейчас прикреплён: <a asp-page="./EducationFile" asp-route-id="@Model.Item.Id" target="_blank">@(Model.Item.OriginalFileName ?? "файл")</a>. Новый файл заменит его.</span>
+                    }
+                </div>
+                <span asp-validation-for="Upload" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.PersonId">Отмена</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

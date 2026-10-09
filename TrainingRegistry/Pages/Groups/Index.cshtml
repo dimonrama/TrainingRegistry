@@ -1,0 +1,85 @@
+@page
+@model TrainingRegistry.Pages.Groups.IndexModel
+@{
+    ViewData["Title"] = "Группы обучения";
+}
+
+<div class="page-head">
+    <h1>Группы обучения</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-success" asp-page="./Index" asp-page-handler="Export" asp-all-route-data='Model.ExportLinkValues()'>Выгрузить в Excel</a>
+        <a class="btn btn-primary" asp-page="./Edit">Создать группу</a>
+    </div>
+</div>
+
+<form method="get" class="card card-body shadow-sm mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small mb-1">Поиск</label>
+            <input type="search" name="Search" value="@Model.Search" class="form-control" placeholder="Название группы или программы" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Программа</label>
+            <select asp-for="ProgramId" class="form-select" asp-items="Model.Programs">
+                <option value="">Все</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Статус группы</label>
+            <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<GroupStatus>()">
+                <option value="">Любой</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-outline-primary">Применить</button>
+        </div>
+    </div>
+    <div class="d-flex justify-content-between mt-2">
+        <a asp-page="./Index">Сбросить</a>
+        <div class="form-check form-switch">
+            <input type="checkbox" class="form-check-input" id="auditToggle" data-toggle-audit data-target="#groupTable" />
+            <label class="form-check-label" for="auditToggle">Кто и когда изменил</label>
+        </div>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <table class="table table-hover table-list mb-0" id="groupTable">
+        <thead>
+            <tr>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("name")'>Группа</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("program")'>Программа</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("start")'>Начало</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("end")'>Окончание</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("status")'>Статус</a></th>
+                <th class="text-end"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("members")'>Обучающихся</a></th>
+                <th class="col-audit"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("updatedBy")'>Кто изменил</a></th>
+                <th class="col-audit"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("updated")'>Дата изменения</a></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var g in Model.Result.Items)
+        {
+            <tr class="@(g.Status == GroupStatus.Cancelled ? "text-muted" : "")">
+                <td><a asp-page="./Details" asp-route-id="@g.Id">@g.Name</a></td>
+                <td>@g.ProgramName</td>
+                <td>@Fmt.Date(g.StartDate)</td>
+                <td>@Fmt.Date(g.EndDate)</td>
+                <td>@g.Status.GetDisplayName()</td>
+                <td class="text-end">@g.Members</td>
+                <td class="col-audit">@(g.UpdatedBy ?? "—")</td>
+                <td class="col-audit">@Fmt.DateTimeLocal(g.UpdatedAt)</td>
+            </tr>
+        }
+        @if (!Model.Result.Items.Any())
+        {
+            <tr><td colspan="8" class="text-center text-muted py-4">Ничего не найдено</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted small">Всего: @Model.Result.TotalCount</div>
+    <partial name="_Pager" model="(Model.Result.Page, Model.Result.TotalPages)" />
+</div>

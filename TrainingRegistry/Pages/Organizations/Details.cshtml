@@ -1,0 +1,109 @@
+@page "{id:int}"
+@model TrainingRegistry.Pages.Organizations.DetailsModel
+@{
+    ViewData["Title"] = Model.Item.DisplayName;
+    var canEdit = User.CanEditOrganizations();
+    var canEditPeople = User.CanEditPeople();
+}
+
+<div class="page-head">
+    <div>
+        <h1>@Model.Item.DisplayName</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Item.ShortName))
+        {
+            <div class="text-muted">@Model.Item.FullName</div>
+        }
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-page="./Index">К списку</a>
+        @if (canEdit)
+        {
+            <a class="btn btn-primary" asp-page="./Edit" asp-route-id="@Model.Item.Id">Редактировать</a>
+            <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Item.Id"
+                  onsubmit="return confirm('Удалить организацию?');">
+                <button type="submit" class="btn btn-outline-danger">Удалить</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">ИНН / КПП / ОГРН</dt>
+            <dd class="col-sm-9">@(Model.Item.Inn ?? "—") / @(Model.Item.Kpp ?? "—") / @(Model.Item.Ogrn ?? "—")</dd>
+            <dt class="col-sm-3">Юридический адрес</dt>
+            <dd class="col-sm-9">@(Model.Item.LegalAddress ?? "—")</dd>
+            <dt class="col-sm-3">Фактический адрес</dt>
+            <dd class="col-sm-9">@(Model.Item.ActualAddress ?? "—")</dd>
+            <dt class="col-sm-3">Телефон</dt>
+            <dd class="col-sm-9">@(Model.Item.Phone ?? "—")</dd>
+            <dt class="col-sm-3">Электронная почта</dt>
+            <dd class="col-sm-9">@(Model.Item.Email ?? "—")</dd>
+            <dt class="col-sm-3">Контактное лицо</dt>
+            <dd class="col-sm-9">@(Model.Item.ContactName ?? "—")@(string.IsNullOrWhiteSpace(Model.Item.ContactPosition) ? "" : ", " + Model.Item.ContactPosition)</dd>
+            <dt class="col-sm-3">Примечание</dt>
+            <dd class="col-sm-9">@(Model.Item.Note ?? "—")</dd>
+        </dl>
+        <partial name="_AuditInfo" model="Model.Item" />
+    </div>
+</div>
+
+<div class="page-head">
+    <h2 class="h4 mb-0">Сотрудники</h2>
+    <div class="d-flex gap-2 align-items-center">
+        <form method="get" class="form-check form-switch mb-0">
+            <input type="checkbox" class="form-check-input" id="dismissed" name="ShowDismissed" value="true"
+                   checked="@Model.ShowDismissed" onchange="this.form.submit()" />
+            <label class="form-check-label" for="dismissed">Показывать уволенных</label>
+        </form>
+        @if (canEditPeople)
+        {
+            <a class="btn btn-sm btn-primary" asp-page="/People/Edit" asp-route-organizationId="@Model.Item.Id">Новый сотрудник</a>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr><th>ФИО</th><th>Должность</th><th>Телефон</th><th>Статус</th>@if (canEdit){<th></th>}</tr>
+        </thead>
+        <tbody>
+        @foreach (var p in Model.Employees)
+        {
+            <tr class="@(p.IsDismissed ? "text-muted" : "")">
+                <td><a asp-page="/People/Details" asp-route-id="@p.Id">@p.FullName</a></td>
+                <td>@(p.Position ?? "—")</td>
+                <td>@(p.Phone ?? "—")</td>
+                <td>@p.Status.GetDisplayName()</td>
+                @if (canEdit)
+                {
+                    <td class="text-end">
+                        <form method="post" asp-page-handler="Detach" asp-route-id="@Model.Item.Id" asp-route-personId="@p.Id"
+                              onsubmit="return confirm('Открепить сотрудника от организации?');">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Открепить</button>
+                        </form>
+                    </td>
+                }
+            </tr>
+        }
+        @if (!Model.Employees.Any())
+        {
+            <tr><td colspan="5" class="text-center text-muted py-4">Сотрудников нет</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+@if (canEdit && Model.FreePeople.Any())
+{
+    <form method="post" asp-page-handler="Attach" asp-route-id="@Model.Item.Id" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <select name="personId" class="form-select" asp-items="Model.FreePeople" aria-label="Физическое лицо"></select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary">Прикрепить существующего (физлицо)</button>
+        </div>
+    </form>
+}

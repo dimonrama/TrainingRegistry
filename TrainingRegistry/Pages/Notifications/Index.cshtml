@@ -1,0 +1,99 @@
+@page
+@model TrainingRegistry.Pages.Notifications.IndexModel
+@{
+    ViewData["Title"] = "Уведомления";
+}
+
+<div class="page-head">
+    <h1>Уведомления о повторном обучении</h1>
+    <div class="d-flex gap-2 align-items-center">
+        <a class="btn btn-outline-success" asp-page="./Index" asp-page-handler="Export" asp-all-route-data='Model.ExportLinkValues()'>Выгрузить в Excel</a>
+        <span class="badge badge-term-red fs-6">Срочно: @Model.RedCount</span>
+        <span class="badge badge-term-yellow fs-6">Скоро: @Model.YellowCount</span>
+    </div>
+</div>
+
+<form method="get" class="card card-body shadow-sm mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Поиск</label>
+            <input type="search" name="Search" value="@Model.Search" class="form-control" placeholder="ФИО, организация, программа" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Организация</label>
+            <select asp-for="OrganizationId" class="form-select" asp-items="Model.Organizations">
+                <option value="">Все</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Программа</label>
+            <select asp-for="ProgramId" class="form-select" asp-items="Model.Programs">
+                <option value="">Все</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">Показывать</label>
+            <select name="Show" class="form-select">
+                <option value="due" selected="@(Model.Show == "due")">Срочные и ближайшие</option>
+                <option value="red" selected="@(Model.Show == "red")">Только срочные</option>
+                <option value="all" selected="@(Model.Show == "all")">Все сроки</option>
+            </select>
+        </div>
+        <div class="col-md-1 d-grid">
+            <button type="submit" class="btn btn-outline-primary">OK</button>
+        </div>
+    </div>
+    <div class="mt-2"><a asp-page="./Index">Сбросить</a></div>
+</form>
+
+<div class="card shadow-sm">
+    <table class="table table-hover table-list mb-0">
+        <thead>
+            <tr>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("person")'>Сотрудник</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("org")'>Организация</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("program")'>Программа</a></th>
+                <th>Пройдено</th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("next")'>Следующее обучение</a></th>
+                <th>Срок</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var r in Model.Result.Items)
+        {
+            var badge = r.Urgency switch
+            {
+                Urgency.Red => "badge-term-red",
+                Urgency.Yellow => "badge-term-yellow",
+                _ => "badge-term-green"
+            };
+            <tr>
+                <td><a asp-page="/People/Details" asp-route-id="@r.PersonId">@r.PersonName</a></td>
+                <td>
+                    @if (r.OrganizationId != null)
+                    {
+                        <a asp-page="/Organizations/Details" asp-route-id="@r.OrganizationId">@r.OrganizationName</a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Физическое лицо</span>
+                    }
+                </td>
+                <td>@r.ProgramName</td>
+                <td>@Fmt.Date(r.CompletedDate)</td>
+                <td class="text-nowrap">@Fmt.Date(r.NextTrainingDate)</td>
+                <td><span class="badge @badge">@r.DaysLeftText</span></td>
+            </tr>
+        }
+        @if (!Model.Result.Items.Any())
+        {
+            <tr><td colspan="6" class="text-center text-muted py-4">Нет сотрудников, которым пора проходить повторное обучение</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted small">Всего: @Model.Result.TotalCount. Цвета: красный — срок наступил или осталось не больше порога программы (по умолчанию 60 дней), жёлтый — ещё 30 дней после порога, зелёный — дальше.</div>
+    <partial name="_Pager" model="(Model.Result.Page, Model.Result.TotalPages)" />
+</div>

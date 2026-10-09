@@ -1,0 +1,191 @@
+@page "{id:int}"
+@model TrainingRegistry.Pages.Groups.DetailsModel
+@{
+    ViewData["Title"] = Model.Item.Name;
+}
+
+<div class="page-head">
+    <div>
+        <h1>@Model.Item.Name</h1>
+        <span class="badge text-bg-secondary">@Model.Item.Status.GetDisplayName()</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-page="./Index">К списку</a>
+        <a class="btn btn-primary" asp-page="./Edit" asp-route-id="@Model.Item.Id">Редактировать</a>
+        <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Item.Id"
+              onsubmit="return confirm('Удалить группу?');">
+            <button type="submit" class="btn btn-outline-danger">Удалить</button>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Программа</dt>
+            <dd class="col-sm-9"><a asp-page="/Programs/Edit" asp-route-id="@Model.ProgramInfo.Id">@Model.ProgramInfo.Name</a></dd>
+            <dt class="col-sm-3">Период обучения</dt>
+            <dd class="col-sm-9">@Fmt.Date(Model.Item.StartDate) — @Fmt.Date(Model.Item.EndDate)</dd>
+            <dt class="col-sm-3">Стоимость за человека</dt>
+            <dd class="col-sm-9">@Fmt.Money(Model.ProgramInfo.Price)</dd>
+            <dt class="col-sm-3">Требования к образованию</dt>
+            <dd class="col-sm-9">@Model.ProgramInfo.RequiredEducation.GetDisplayName()</dd>
+            <dt class="col-sm-3">Повторное обучение</dt>
+            <dd class="col-sm-9">@Model.ProgramInfo.RecurrenceText</dd>
+            @if (!string.IsNullOrWhiteSpace(Model.Item.Note))
+            {
+                <dt class="col-sm-3">Примечание</dt>
+                <dd class="col-sm-9">@Model.Item.Note</dd>
+            }
+        </dl>
+        <partial name="_AuditInfo" model="Model.Item" />
+    </div>
+</div>
+
+@if (Model.Warnings.Count > 0 && Model.PendingPersonId != null)
+{
+    <div class="alert alert-warning">
+        <div class="fw-semibold mb-1">Зачисление сотрудника «@Model.PendingPersonName»: есть предупреждения</div>
+        <ul class="mb-2">
+            @foreach (var w in Model.Warnings)
+            {
+                <li>@w</li>
+            }
+        </ul>
+        <form method="post" asp-page-handler="Enroll" asp-route-id="@Model.Item.Id" class="d-flex gap-2">
+            <input type="hidden" name="personId" value="@Model.PendingPersonId" />
+            <input type="hidden" name="confirm" value="true" />
+            <button type="submit" class="btn btn-warning btn-sm">Всё равно зачислить</button>
+            <a class="btn btn-outline-secondary btn-sm" asp-page="./Details" asp-route-id="@Model.Item.Id">Отмена</a>
+        </form>
+    </div>
+}
+
+@if (!Model.IsClosed)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="h5">Зачислить сотрудника</h2>
+            <form method="get" class="row g-2 align-items-end mb-2">
+                <input type="hidden" name="id" value="@Model.Item.Id" />
+                <div class="col-md-6">
+                    <input type="search" name="PersonSearch" value="@Model.PersonSearch" class="form-control"
+                           placeholder="Начните вводить ФИО или организацию" />
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-primary">Найти</button>
+                </div>
+            </form>
+
+            @if (Model.Candidates.Count > 0)
+            {
+                <form method="post" asp-page-handler="Enroll" asp-route-id="@Model.Item.Id" class="row g-2 align-items-end">
+                    <div class="col-md-8">
+                        <select name="personId" class="form-select" asp-items="Model.Candidates"></select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Зачислить</button>
+                    </div>
+                </form>
+            }
+            else if (!string.IsNullOrWhiteSpace(Model.PersonSearch))
+            {
+                <div class="text-muted small">Никого не найдено (или все найденные уже в группе).</div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-secondary">Группа закрыта (@Model.Item.Status.GetDisplayName().ToLower()) — зачисление недоступно.</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">Состав группы <span class="text-muted fs-6">(@Model.Members.Count)</span></h2>
+    <a class="btn btn-outline-success" asp-page="./Details" asp-page-handler="Export" asp-route-id="@Model.Item.Id">Выгрузить в Excel</a>
+</div>
+<div class="card shadow-sm">
+    <table class="table align-middle mb-0">
+        <thead>
+            <tr><th>ФИО</th><th>Организация</th><th>Статус и отметка о прохождении</th><th>Следующее обучение</th><th></th></tr>
+        </thead>
+        <tbody>
+        @foreach (var m in Model.Members)
+        {
+            <tr>
+                <td>
+                    <a asp-page="/People/Details" asp-route-id="@m.PersonId">@m.FullName</a>
+                    @if (m.Dismissed)
+                    {
+                        <span class="badge text-bg-secondary">уволен</span>
+                    }
+                    @if (!string.IsNullOrEmpty(m.Position))
+                    {
+                        <div class="small text-muted">@m.Position</div>
+                    }
+                </td>
+                <td>@(m.OrganizationName ?? "Физическое лицо")</td>
+                <td>
+                    <form method="post" asp-page-handler="Status" asp-route-id="@Model.Item.Id" class="d-flex flex-wrap gap-1">
+                        <input type="hidden" name="enrollmentId" value="@m.EnrollmentId" />
+                        <select name="status" class="form-select form-select-sm w-auto" asp-items="Model.StatusItems(m.Status)"></select>
+                        <input type="date" name="completedDate" value="@(m.CompletedDate?.ToString("yyyy-MM-dd"))"
+                               class="form-control form-control-sm w-auto" title="Дата прохождения (если пусто — сегодня)" />
+                        <input type="text" name="certificate" value="@m.CertificateNumber" maxlength="100"
+                               class="form-control form-control-sm w-auto" placeholder="№ удостоверения" />
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Сохранить</button>
+                    </form>
+                </td>
+                <td class="text-nowrap">@Fmt.Date(m.NextTrainingDate)</td>
+                <td class="text-end">
+                    @if (m.Status != EnrollmentStatus.Completed)
+                    {
+                        <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Item.Id"
+                              onsubmit="return confirm('Исключить из группы?');">
+                            <input type="hidden" name="enrollmentId" value="@m.EnrollmentId" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Исключить</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        @if (!Model.Members.Any())
+        {
+            <tr><td colspan="5" class="text-center text-muted py-4">В группе пока никого нет</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+@if (Model.Customers.Count > 0)
+{
+    <h2 class="h4 mt-4 mb-3">Договоры</h2>
+    <div class="card shadow-sm">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>Заказчик</th><th class="text-end">Обучающихся</th><th>Договор</th></tr></thead>
+            <tbody>
+            @foreach (var c in Model.Customers)
+            {
+                <tr>
+                    <td>@c.Name</td>
+                    <td class="text-end">@c.Students</td>
+                    <td>
+                        @if (c.ContractId != null)
+                        {
+                            <a asp-page="/Contracts/Details" asp-route-id="@c.ContractId">@c.ContractNumber</a>
+                        }
+                        else
+                        {
+                            <form method="post" asp-page-handler="Contract" asp-route-id="@Model.Item.Id">
+                                <input type="hidden" name="organizationId" value="@c.OrganizationId" />
+                                <input type="hidden" name="personId" value="@c.PersonId" />
+                                <button type="submit" class="btn btn-sm btn-primary">Сформировать договор</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

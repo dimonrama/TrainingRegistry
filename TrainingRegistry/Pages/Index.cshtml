@@ -1,0 +1,100 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Главная";
+}
+
+<div class="page-head">
+    <h1>Главная</h1>
+    <span class="text-muted">@User.FindFirst(AppClaims.DisplayName)?.Value</span>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a class="stat-card" asp-page="/Organizations/Index">
+            <div class="stat-value">@Model.OrganizationsCount</div>
+            <div class="stat-label">Организаций</div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a class="stat-card" asp-page="/People/Index">
+            <div class="stat-value">@Model.ActiveEmployeesCount</div>
+            <div class="stat-label">Действующих сотрудников</div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a class="stat-card" asp-page="/Groups/Index">
+            <div class="stat-value">@Model.ActiveGroupsCount</div>
+            <div class="stat-label">Активных групп</div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">@Model.TrainedCount</div>
+            <div class="stat-label">Всего обучено сотрудников</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>Ближайшее повторное обучение</strong>
+                <span>
+                    <span class="badge badge-term-red">Срочно: @Model.RedCount</span>
+                    <span class="badge badge-term-yellow">Скоро: @Model.YellowCount</span>
+                </span>
+            </div>
+            <table class="table table-sm mb-0">
+                <tbody>
+                @foreach (var d in Model.NearestDue)
+                {
+                    <tr>
+                        <td><a asp-page="/People/Details" asp-route-id="@d.PersonId">@d.PersonName</a></td>
+                        <td>@d.ProgramName</td>
+                        <td class="text-nowrap">@Fmt.Date(d.NextTrainingDate)</td>
+                        <td class="text-nowrap">
+                            <span class="badge @(d.Urgency == Urgency.Red ? "badge-term-red" : "badge-term-yellow")">@d.DaysLeftText</span>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.NearestDue.Any())
+                {
+                    <tr><td class="text-center text-muted py-4">Срочных уведомлений нет</td></tr>
+                }
+                </tbody>
+            </table>
+            <div class="card-footer text-end">
+                <a asp-page="/Notifications/Index">Все уведомления →</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header"><strong>Активные группы</strong></div>
+            <table class="table table-sm mb-0">
+                <tbody>
+                @foreach (var g in Model.ActiveGroups)
+                {
+                    <tr>
+                        <td>
+                            <a asp-page="/Groups/Details" asp-route-id="@g.Id">@g.Name</a>
+                            <div class="small text-muted">@g.ProgramName</div>
+                        </td>
+                        <td class="text-nowrap">с @Fmt.Date(g.StartDate)</td>
+                        <td class="text-nowrap text-end">@g.Students чел.</td>
+                    </tr>
+                }
+                @if (!Model.ActiveGroups.Any())
+                {
+                    <tr><td class="text-center text-muted py-4">Активных групп нет</td></tr>
+                }
+                </tbody>
+            </table>
+            <div class="card-footer text-end">
+                <a asp-page="/Groups/Index">Все группы →</a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,102 @@
+@page
+@model TrainingRegistry.Pages.People.IndexModel
+@{
+    ViewData["Title"] = "Сотрудники";
+}
+
+<div class="page-head">
+    <h1>Сотрудники</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-success" asp-page="./Index" asp-page-handler="Export" asp-all-route-data='Model.ExportLinkValues()'>Выгрузить в Excel</a>
+        @if (User.CanEditPeople())
+        {
+            <a class="btn btn-primary" asp-page="./Edit">Добавить сотрудника</a>
+        }
+    </div>
+</div>
+
+<form method="get" class="card card-body shadow-sm mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small mb-1">Поиск</label>
+            <input type="search" name="Search" value="@Model.Search" class="form-control"
+                   placeholder="ФИО, телефон, почта, организация" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Организация</label>
+            <select asp-for="OrganizationId" class="form-select" asp-items="Model.Organizations">
+                <option value="">Все</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Уровень образования</label>
+            <select asp-for="Level" class="form-select" asp-items="Html.GetEnumSelectList<EducationLevel>()">
+                <option value="">Любой</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-outline-primary">Применить</button>
+        </div>
+    </div>
+    <div class="row g-3 mt-1">
+        <div class="col-auto form-check form-switch ms-2">
+            <input type="checkbox" class="form-check-input" id="individuals" name="IndividualsOnly" value="true" checked="@Model.IndividualsOnly" />
+            <label class="form-check-label" for="individuals">Только физические лица</label>
+        </div>
+        <div class="col-auto form-check form-switch">
+            <input type="checkbox" class="form-check-input" id="dismissed" name="ShowDismissed" value="true" checked="@Model.ShowDismissed" />
+            <label class="form-check-label" for="dismissed">Показывать уволенных</label>
+        </div>
+        <div class="col-auto"><a asp-page="./Index">Сбросить</a></div>
+        <div class="col-auto ms-auto form-check form-switch">
+            <input type="checkbox" class="form-check-input" id="auditToggle" data-toggle-audit data-target="#peopleTable" />
+            <label class="form-check-label" for="auditToggle">Кто и когда изменил</label>
+        </div>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <table class="table table-hover table-list mb-0" id="peopleTable">
+        <thead>
+            <tr>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("name")'>ФИО</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("org")'>Организация</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("position")'>Должность</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("status")'>Статус</a></th>
+                <th class="col-audit"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("updatedBy")'>Кто изменил</a></th>
+                <th class="col-audit"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("updated")'>Дата изменения</a></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var p in Model.Result.Items)
+        {
+            <tr class="@(p.Status == PersonStatus.Dismissed ? "text-muted" : "")">
+                <td><a asp-page="./Details" asp-route-id="@p.Id">@p.FullName</a></td>
+                <td>
+                    @if (p.OrganizationId != null)
+                    {
+                        <a asp-page="/Organizations/Details" asp-route-id="@p.OrganizationId">@p.OrganizationName</a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Физическое лицо</span>
+                    }
+                </td>
+                <td>@(p.Position ?? "—")</td>
+                <td>@p.Status.GetDisplayName()</td>
+                <td class="col-audit">@(p.UpdatedBy ?? "—")</td>
+                <td class="col-audit">@Fmt.DateTimeLocal(p.UpdatedAt)</td>
+            </tr>
+        }
+        @if (!Model.Result.Items.Any())
+        {
+            <tr><td colspan="6" class="text-center text-muted py-4">Ничего не найдено</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted small">Всего: @Model.Result.TotalCount</div>
+    <partial name="_Pager" model="(Model.Result.Page, Model.Result.TotalPages)" />
+</div>

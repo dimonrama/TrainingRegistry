@@ -1,0 +1,99 @@
+@page "{id:int?}"
+@model TrainingRegistry.Pages.Organizations.EditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Новая организация" : "Редактирование организации";
+}
+
+<div class="page-head">
+    <h1>@ViewData["Title"]</h1>
+</div>
+
+<form method="post" class="card shadow-sm">
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="row g-3">
+            <div class="col-12">
+                <label asp-for="Item.FullName" class="form-label"></label> <span class="text-danger">*</span>
+                <input asp-for="Item.FullName" class="form-control" />
+                <span asp-validation-for="Item.FullName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Item.ShortName" class="form-label"></label>
+                <input asp-for="Item.ShortName" class="form-control" />
+                <span asp-validation-for="Item.ShortName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Item.Inn" class="form-label"></label>
+                <input asp-for="Item.Inn" class="form-control" inputmode="numeric" />
+                <span asp-validation-for="Item.Inn" class="text-danger small"></span>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Item.Kpp" class="form-label"></label>
+                <input asp-for="Item.Kpp" class="form-control" inputmode="numeric" />
+                <span asp-validation-for="Item.Kpp" class="text-danger small"></span>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Item.Ogrn" class="form-label"></label>
+                <input asp-for="Item.Ogrn" class="form-control" inputmode="numeric" />
+                <span asp-validation-for="Item.Ogrn" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Item.LegalAddress" class="form-label"></label>
+                <input asp-for="Item.LegalAddress" class="form-control" />
+                <span asp-validation-for="Item.LegalAddress" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Item.ActualAddress" class="form-label"></label>
+                <input asp-for="Item.ActualAddress" class="form-control" />
+                <span asp-validation-for="Item.ActualAddress" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.Phone" class="form-label"></label>
+                <input asp-for="Item.Phone" class="form-control" />
+                <span asp-validation-for="Item.Phone" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.Email" class="form-label"></label>
+                <input asp-for="Item.Email" class="form-control" type="email" />
+                <span asp-validation-for="Item.Email" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4"></div>
+            <div class="col-md-6">
+                <label asp-for="Item.ContactName" class="form-label"></label>
+                <input asp-for="Item.ContactName" class="form-control" />
+                <span asp-validation-for="Item.ContactName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Item.ContactPosition" class="form-label"></label>
+                <input asp-for="Item.ContactPosition" class="form-control" />
+                <span asp-validation-for="Item.ContactPosition" class="text-danger small"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Item.Note" class="form-label"></label>
+                <textarea asp-for="Item.Note" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Item.Note" class="text-danger small"></span>
+            </div>
+        </div>
+
+        @if (!Model.IsNew)
+        {
+            <partial name="_AuditInfo" model="Model.Item" />
+        }
+    </div>
+    <div class="card-footer d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        @if (Model.IsNew)
+        {
+            <a class="btn btn-outline-secondary" asp-page="./Index">Отмена</a>
+        }
+        else
+        {
+            <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.Item.Id">Отмена</a>
+        }
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

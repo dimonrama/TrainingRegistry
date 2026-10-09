@@ -1,0 +1,90 @@
+@page
+@model UsersModel
+@{
+    ViewData["Title"] = "Пользователи";
+    ViewData["AdminTab"] = "users";
+}
+
+<div class="page-head">
+    <h1>Администрирование</h1>
+    <a class="btn btn-primary" asp-page="./UserEdit">Создать пользователя</a>
+</div>
+
+<partial name="_AdminTabs" />
+
+<form method="get" class="row g-2 mb-3 align-items-center">
+    <div class="col-md-4">
+        <input type="search" name="Search" value="@Model.Search" class="form-control" placeholder="Логин или ФИО" />
+    </div>
+    <div class="col-md-2">
+        <select asp-for="Role" class="form-select" asp-items="Html.GetEnumSelectList<UserRole>()">
+            <option value="">Все роли</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="Show" class="form-select">
+            <option value="all" selected="@(Model.Show == "all")">Все</option>
+            <option value="active" selected="@(Model.Show == "active")">Действующие</option>
+            <option value="blocked" selected="@(Model.Show == "blocked")">Заблокированные</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Применить</button>
+        <a class="btn btn-link" asp-page="./Users">Сбросить</a>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <table class="table table-hover table-list mb-0">
+        <thead>
+            <tr>
+                <th><a asp-page="./Users" asp-all-route-data='Model.SortLinkValues("login")'>Логин</a></th>
+                <th><a asp-page="./Users" asp-all-route-data='Model.SortLinkValues("name")'>ФИО</a></th>
+                <th><a asp-page="./Users" asp-all-route-data='Model.SortLinkValues("role")'>Роль</a></th>
+                <th>Права на изменение</th>
+                <th><a asp-page="./Users" asp-all-route-data='Model.SortLinkValues("status")'>Статус</a></th>
+                <th><a asp-page="./Users" asp-all-route-data='Model.SortLinkValues("lastLogin")'>Последняя авторизация</a></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var u in Model.Result.Items)
+        {
+            <tr class="@(u.IsBlocked ? "text-muted" : "")">
+                <td><a asp-page="./UserEdit" asp-route-id="@u.Id">@u.Login</a></td>
+                <td>@u.FullName</td>
+                <td>@u.Role.GetDisplayName()</td>
+                <td>
+                    @if (u.Role == UserRole.Admin)
+                    {
+                        <span class="text-muted">все</span>
+                    }
+                    else
+                    {
+                        <span>Организации: @(u.CanEditOrganizations ? "да" : "нет"), сотрудники: @(u.CanEditPeople ? "да" : "нет")</span>
+                    }
+                </td>
+                <td>
+                    @if (u.IsBlocked)
+                    {
+                        <span class="badge text-bg-danger">Заблокирован</span>
+                    }
+                    else
+                    {
+                        <span class="badge text-bg-success">Активен</span>
+                    }
+                </td>
+                <td class="text-nowrap">@Fmt.DateTimeLocal(u.LastLoginAt)</td>
+            </tr>
+        }
+        @if (!Model.Result.Items.Any())
+        {
+            <tr><td colspan="6" class="text-center text-muted py-4">Пользователей не найдено</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted small">Всего: @Model.Result.TotalCount</div>
+    <partial name="_Pager" model="(Model.Result.Page, Model.Result.TotalPages)" />
+</div>

@@ -1,0 +1,5 @@
+@model AuditableEntity
+<div class="audit-info">
+    <div>Создано: @Fmt.DateTimeLocal(Model.CreatedAt) — @Model.CreatedBy</div>
+    <div>Последнее изменение: @Fmt.DateTimeLocal(Model.UpdatedAt) — @Model.UpdatedBy</div>
+</div>

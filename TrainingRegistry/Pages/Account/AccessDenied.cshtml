@@ -1,0 +1,26 @@
+@page
+@model AccessDeniedModel
+@{
+    ViewData["Title"] = "Доступ запрещён";
+}
+
+<div class="text-center py-5">
+    <h1 class="display-4">403</h1>
+    <p class="lead">У вас нет прав для просмотра этой страницы.</p>
+    <p class="text-muted">Через <span id="redirect-seconds">5</span> с вы будете перенаправлены на главную страницу.</p>
+    <a class="btn btn-primary" href="/">На главную</a>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var left = 5;
+            var label = document.getElementById('redirect-seconds');
+            var timer = setInterval(function () {
+                left--;
+                if (label) label.textContent = left;
+                if (left <= 0) { clearInterval(timer); window.location.href = '/'; }
+            }, 1000);
+        })();
+    </script>
+}

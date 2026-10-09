@@ -1,0 +1,75 @@
+@page
+@model TrainingRegistry.Pages.Programs.IndexModel
+@{
+    ViewData["Title"] = "Программы обучения";
+}
+
+<div class="page-head">
+    <h1>Программы обучения</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-success" asp-page="./Index" asp-page-handler="Export" asp-all-route-data='Model.ExportLinkValues()'>Выгрузить в Excel</a>
+        <a class="btn btn-primary" asp-page="./Edit">Добавить программу</a>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-center">
+    <div class="col-md-4">
+        <input type="search" name="Search" value="@Model.Search" class="form-control" placeholder="Поиск по названию и описанию" />
+    </div>
+    <div class="col-md-2">
+        <select name="Show" class="form-select" aria-label="Статус">
+            <option value="active" selected="@(Model.Show == "active")">Активные</option>
+            <option value="archived" selected="@(Model.Show == "archived")">Архив</option>
+            <option value="all" selected="@(Model.Show == "all")">Все</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Применить</button>
+        <a class="btn btn-link" asp-page="./Index">Сбросить</a>
+    </div>
+    <div class="col-auto ms-auto form-check form-switch">
+        <input type="checkbox" class="form-check-input" id="auditToggle" data-toggle-audit data-target="#programTable" />
+        <label class="form-check-label" for="auditToggle">Кто и когда изменил</label>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <table class="table table-hover table-list mb-0" id="programTable">
+        <thead>
+            <tr>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("name")'>Наименование</a></th>
+                <th class="text-end"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("price")'>Стоимость</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("education")'>Требования к образованию</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("recurrence")'>Повторное обучение</a></th>
+                <th>Срок обучения</th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("status")'>Статус</a></th>
+                <th class="col-audit"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("updatedBy")'>Кто изменил</a></th>
+                <th class="col-audit"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("updated")'>Дата изменения</a></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var p in Model.Result.Items)
+        {
+            <tr class="@(p.Status == ProgramStatus.Archived ? "text-muted" : "")">
+                <td><a asp-page="./Edit" asp-route-id="@p.Id">@p.Name</a></td>
+                <td class="text-end text-nowrap">@Fmt.Money(p.Price)</td>
+                <td>@p.RequiredEducation.GetDisplayName()</td>
+                <td>@p.RecurrenceText</td>
+                <td>@p.DurationText</td>
+                <td>@p.Status.GetDisplayName()</td>
+                <td class="col-audit">@(p.UpdatedBy ?? "—")</td>
+                <td class="col-audit">@Fmt.DateTimeLocal(p.UpdatedAt)</td>
+            </tr>
+        }
+        @if (!Model.Result.Items.Any())
+        {
+            <tr><td colspan="8" class="text-center text-muted py-4">Ничего не найдено</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted small">Всего: @Model.Result.TotalCount</div>
+    <partial name="_Pager" model="(Model.Result.Page, Model.Result.TotalPages)" />
+</div>

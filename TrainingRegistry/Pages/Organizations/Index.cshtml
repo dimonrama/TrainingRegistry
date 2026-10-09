@@ -1,0 +1,76 @@
+@page
+@model TrainingRegistry.Pages.Organizations.IndexModel
+@{
+    ViewData["Title"] = "Организации";
+}
+
+<div class="page-head">
+    <h1>Организации</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-success" asp-page="./Index" asp-page-handler="Export" asp-all-route-data='Model.ExportLinkValues()'>Выгрузить в Excel</a>
+        @if (User.CanEditOrganizations())
+        {
+            <a class="btn btn-primary" asp-page="./Edit">Добавить организацию</a>
+        }
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-center">
+    <div class="col-md-5">
+        <input type="search" name="Search" value="@Model.Search" class="form-control"
+               placeholder="Поиск по названию, ИНН, контактному лицу" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Найти</button>
+        <a class="btn btn-link" asp-page="./Index">Сбросить</a>
+    </div>
+    <div class="col-auto ms-auto form-check form-switch">
+        <input type="checkbox" class="form-check-input" id="auditToggle" data-toggle-audit data-target="#orgTable" />
+        <label class="form-check-label" for="auditToggle">Кто и когда изменил</label>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <table class="table table-hover table-list mb-0" id="orgTable">
+        <thead>
+            <tr>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("name")'>Наименование</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("inn")'>ИНН</a></th>
+                <th>Телефон</th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("contact")'>Контактное лицо</a></th>
+                <th class="text-end">Сотрудников</th>
+                <th class="col-audit"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("updatedBy")'>Кто изменил</a></th>
+                <th class="col-audit"><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("updated")'>Дата изменения</a></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var o in Model.Result.Items)
+        {
+            <tr>
+                <td>
+                    <a asp-page="./Details" asp-route-id="@o.Id">@(string.IsNullOrWhiteSpace(o.ShortName) ? o.FullName : o.ShortName)</a>
+                    @if (!string.IsNullOrWhiteSpace(o.ShortName))
+                    {
+                        <div class="small text-muted">@o.FullName</div>
+                    }
+                </td>
+                <td>@(o.Inn ?? "—")</td>
+                <td>@(o.Phone ?? "—")</td>
+                <td>@(o.ContactName ?? "—")</td>
+                <td class="text-end">@o.EmployeesCount</td>
+                <td class="col-audit">@(o.UpdatedBy ?? "—")</td>
+                <td class="col-audit">@Fmt.DateTimeLocal(o.UpdatedAt)</td>
+            </tr>
+        }
+        @if (!Model.Result.Items.Any())
+        {
+            <tr><td colspan="7" class="text-center text-muted py-4">Ничего не найдено</td></tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="text-muted small">Всего: @Model.Result.TotalCount</div>
+    <partial name="_Pager" model="(Model.Result.Page, Model.Result.TotalPages)" />
+</div>
