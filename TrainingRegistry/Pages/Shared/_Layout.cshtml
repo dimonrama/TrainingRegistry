@@ -8,11 +8,13 @@
     {
         ("Главная",                 "/",                true,  false),
         ("Организации",             "/Organizations",   true,  false),
-        ("Сотрудники",              "/People",          true,  false),
+        ("Обучающиеся",             "/People",          true,  false),
         ("Программы обучения",      "/Programs",        true,  false),
         ("Группы обучения",         "/Groups",          true,  false),
         ("Уведомления",             "/Notifications",   true,  false),
         ("Договоры",                "/Contracts",       true,  false),
+        ("Отчёты",                  "/Reports",         true,  false),
+        ("История изменений",       "/History",         true,  false),
         ("Администрирование",       "/Admin/Users",     true,  true),
     };
 }
@@ -32,7 +34,7 @@
         <aside class="app-sidebar">
             <div class="app-brand">Учёт обучающихся</div>
             <nav class="nav flex-column">
-                @foreach (var item in menu.Where(m => !m.AdminOnly || isAdmin))
+                @foreach (var item in menu.Where(m => (!m.AdminOnly || isAdmin) && (m.Url != "/Reports" || User.CanReports()) && (m.Url != "/History" || User.CanViewHistory())))
                 {
                     var active = item.Url == "/" ? currentPath == "/" : currentPath.StartsWith(item.Url, StringComparison.OrdinalIgnoreCase);
                     if (item.Ready)

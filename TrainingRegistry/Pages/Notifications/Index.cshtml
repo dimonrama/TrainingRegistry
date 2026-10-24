@@ -50,7 +50,7 @@
     <table class="table table-hover table-list mb-0">
         <thead>
             <tr>
-                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("person")'>Сотрудник</a></th>
+                <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("person")'>Обучающийся</a></th>
                 <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("org")'>Организация</a></th>
                 <th><a asp-page="./Index" asp-all-route-data='Model.SortLinkValues("program")'>Программа</a></th>
                 <th>Пройдено</th>
@@ -87,7 +87,7 @@
         }
         @if (!Model.Result.Items.Any())
         {
-            <tr><td colspan="6" class="text-center text-muted py-4">Нет сотрудников, которым пора проходить повторное обучение</td></tr>
+            <tr><td colspan="6" class="text-center text-muted py-4">Нет обучающихся, которым пора проходить повторное обучение</td></tr>
         }
         </tbody>
     </table>

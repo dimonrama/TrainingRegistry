@@ -2,6 +2,7 @@
 @model TrainingRegistry.Pages.Groups.DetailsModel
 @{
     ViewData["Title"] = Model.Item.Name;
+    var canEnroll = User.CanEnroll();
 }
 
 <div class="page-head">
@@ -26,6 +27,18 @@
             <dd class="col-sm-9"><a asp-page="/Programs/Edit" asp-route-id="@Model.ProgramInfo.Id">@Model.ProgramInfo.Name</a></dd>
             <dt class="col-sm-3">Период обучения</dt>
             <dd class="col-sm-9">@Fmt.Date(Model.Item.StartDate) — @Fmt.Date(Model.Item.EndDate)</dd>
+            @if (!string.IsNullOrWhiteSpace(Model.Item.RegistrationNumber))
+            {
+                <dt class="col-sm-3">Регистрационный номер</dt>
+                <dd class="col-sm-9">@Model.Item.RegistrationNumber</dd>
+            }
+            <dt class="col-sm-3">Финансирование</dt>
+            <dd class="col-sm-9">@FundingRules.Short(Model.Item.FundingSource)</dd>
+            @if (!string.IsNullOrWhiteSpace(Model.Item.CuratorName))
+            {
+                <dt class="col-sm-3">Куратор</dt>
+                <dd class="col-sm-9">@Model.Item.CuratorName</dd>
+            }
             <dt class="col-sm-3">Стоимость за человека</dt>
             <dd class="col-sm-9">@Fmt.Money(Model.ProgramInfo.Price)</dd>
             <dt class="col-sm-3">Требования к образованию</dt>
@@ -42,10 +55,24 @@
     </div>
 </div>
 
+@if (Model.BlockedMissing.Count > 0)
+{
+    <div class="alert alert-danger">
+        <div class="fw-semibold mb-1">Зачислить «@Model.PendingPersonName» нельзя: в карточке не заполнено обязательное для программы</div>
+        <ul class="mb-2">
+            @foreach (var m in Model.BlockedMissing)
+            {
+                <li>@m</li>
+            }
+        </ul>
+        <a class="btn btn-sm btn-outline-danger" asp-page="/People/Edit" asp-route-id="@Model.PendingPersonId">Открыть карточку</a>
+    </div>
+}
+
 @if (Model.Warnings.Count > 0 && Model.PendingPersonId != null)
 {
     <div class="alert alert-warning">
-        <div class="fw-semibold mb-1">Зачисление сотрудника «@Model.PendingPersonName»: есть предупреждения</div>
+        <div class="fw-semibold mb-1">Зачисление обучающегося «@Model.PendingPersonName»: есть предупреждения</div>
         <ul class="mb-2">
             @foreach (var w in Model.Warnings)
             {
@@ -61,11 +88,11 @@
     </div>
 }
 
-@if (!Model.IsClosed)
+@if (!Model.IsClosed && canEnroll)
 {
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <h2 class="h5">Зачислить сотрудника</h2>
+            <h2 class="h5">Зачислить обучающегося</h2>
             <form method="get" class="row g-2 align-items-end mb-2">
                 <input type="hidden" name="id" value="@Model.Item.Id" />
                 <div class="col-md-6">
@@ -95,19 +122,25 @@
         </div>
     </div>
 }
-else
+else if (Model.IsClosed)
 {
     <div class="alert alert-secondary">Группа закрыта (@Model.Item.Status.GetDisplayName().ToLower()) — зачисление недоступно.</div>
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="h4 mb-0">Состав группы <span class="text-muted fs-6">(@Model.Members.Count)</span></h2>
-    <a class="btn btn-outline-success" asp-page="./Details" asp-page-handler="Export" asp-route-id="@Model.Item.Id">Выгрузить в Excel</a>
+    <div class="d-flex gap-2">
+        @if (User.CanReports())
+        {
+            <a class="btn btn-outline-primary" asp-page="./Documents" asp-route-id="@Model.Item.Id">Документы группы</a>
+        }
+        <a class="btn btn-outline-success" asp-page="./Details" asp-page-handler="Export" asp-route-id="@Model.Item.Id">Выгрузить в Excel</a>
+    </div>
 </div>
 <div class="card shadow-sm">
     <table class="table align-middle mb-0">
         <thead>
-            <tr><th>ФИО</th><th>Организация</th><th>Статус и отметка о прохождении</th><th>Следующее обучение</th><th></th></tr>
+            <tr><th>ФИО</th><th>Организация</th><th>Статус, финансирование, оценка</th><th>Следующее обучение</th><th></th></tr>
         </thead>
         <tbody>
         @foreach (var m in Model.Members)
@@ -128,17 +161,30 @@ else
                 <td>
                     <form method="post" asp-page-handler="Status" asp-route-id="@Model.Item.Id" class="d-flex flex-wrap gap-1">
                         <input type="hidden" name="enrollmentId" value="@m.EnrollmentId" />
-                        <select name="status" class="form-select form-select-sm w-auto" asp-items="Model.StatusItems(m.Status)"></select>
+                        <select name="status" class="form-select form-select-sm w-auto" asp-items="Model.StatusItems(m.Status)" disabled="@(!canEnroll)"></select>
+                        <select name="funding" class="form-select form-select-sm w-auto" asp-items="Model.FundingItems(m.OwnFunding)" title="Финансирование" disabled="@(!canEnroll)">
+                            <option value="">@(m.OwnFunding == null ? $"как в группе ({FundingRules.Short(m.Funding)})" : "как в группе")</option>
+                        </select>
+                        <select name="grade" class="form-select form-select-sm w-auto" asp-items="Model.GradeItems(m.Grade)" title="Результат аттестации" disabled="@(!canEnroll)">
+                            <option value="">без оценки</option>
+                        </select>
                         <input type="date" name="completedDate" value="@(m.CompletedDate?.ToString("yyyy-MM-dd"))"
                                class="form-control form-control-sm w-auto" title="Дата прохождения (если пусто — сегодня)" />
                         <input type="text" name="certificate" value="@m.CertificateNumber" maxlength="100"
                                class="form-control form-control-sm w-auto" placeholder="№ удостоверения" />
-                        <button type="submit" class="btn btn-sm btn-outline-primary">Сохранить</button>
+                        @if (canEnroll)
+                        {
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Сохранить</button>
+                        }
                     </form>
+                    @if (m.Status == EnrollmentStatus.Expelled)
+                    {
+                        <div class="small text-muted mt-1">Отчислен@(string.IsNullOrWhiteSpace(m.ExpelReason) ? "" : ": " + m.ExpelReason)</div>
+                    }
                 </td>
                 <td class="text-nowrap">@Fmt.Date(m.NextTrainingDate)</td>
                 <td class="text-end">
-                    @if (m.Status != EnrollmentStatus.Completed)
+                    @if (m.Status != EnrollmentStatus.Completed && canEnroll)
                     {
                         <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Item.Id"
                               onsubmit="return confirm('Исключить из группы?');">
@@ -156,6 +202,28 @@ else
         </tbody>
     </table>
 </div>
+
+@if (Model.GeneratedDocs.Count > 0 && User.CanReports())
+{
+    <h2 class="h4 mt-4 mb-3">Сформированные документы</h2>
+    <div class="card shadow-sm">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>Документ</th><th>Номер</th><th>Дата</th><th>Сформирован</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var d in Model.GeneratedDocs)
+            {
+                <tr>
+                    <td>@d.Kind.GetDisplayName()</td>
+                    <td>@(d.Number ?? "—")</td>
+                    <td>@Fmt.Date(d.DocDate)</td>
+                    <td>@Fmt.DateTimeLocal(d.CreatedAt)</td>
+                    <td class="text-end"><a asp-page="./DocumentFile" asp-route-id="@d.Id">Скачать</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
 
 @if (Model.Customers.Count > 0)
 {

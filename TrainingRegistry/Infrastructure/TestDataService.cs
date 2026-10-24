@@ -37,6 +37,7 @@ public class TestDataService
             FirstName = (female ? FemaleNames : MaleNames)[rnd.Next(10)],
             MiddleName = (female ? FemalePatronymics : MalePatronymics)[rnd.Next(8)],
             BirthDate = new DateOnly(rnd.Next(1960, 2002), rnd.Next(1, 13), rnd.Next(1, 28)),
+            Snils = Snils.FromBase(n * 7919 + rnd.Next(1, 7000)),
             Phone = $"+7 9{rnd.Next(10, 99)} {rnd.Next(100, 999)}-{rnd.Next(10, 99)}-{rnd.Next(10, 99)}",
             Email = testMark ? $"u{n}{EmailDomain}" : null,
             OrganizationId = orgId,
@@ -124,8 +125,8 @@ public class TestDataService
         }
         var current = new[]
         {
-            new TrainingGroup { Name = "Охрана труда — октябрь", Program = programs[0], StartDate = today.AddDays(-3), EndDate = today.AddDays(4), Status = GroupStatus.InProgress },
-            new TrainingGroup { Name = "Электробезопасность — ноябрь", Program = programs[2], StartDate = today.AddDays(25), Status = GroupStatus.Recruiting },
+            new TrainingGroup { Name = "Охрана труда — октябрь", RegistrationNumber = "ОТ-26/10", FundingSource = FundingSource.StateTask, CuratorName = "Петрова Анна Ивановна", Program = programs[0], StartDate = today.AddDays(-3), EndDate = today.AddDays(4), Status = GroupStatus.InProgress },
+            new TrainingGroup { Name = "Электробезопасность — ноябрь", FundingSource = FundingSource.Business, Program = programs[2], StartDate = today.AddDays(25), Status = GroupStatus.Recruiting },
             new TrainingGroup { Name = "Первая помощь — декабрь", Program = programs[4], StartDate = today.AddDays(60), Status = GroupStatus.Recruiting }
         };
         _db.Groups.AddRange(current);
@@ -211,7 +212,7 @@ public class TestDataService
                     person.Status = PersonStatus.Dismissed;
                     person.DismissalDate = today.AddDays(-rnd.Next(1, 300));
                 }
-                // каждому сотруднику 1-3 случайные группы
+                // каждому обучающемуся 1-3 случайные группы
                 foreach (var g in groups.OrderBy(_ => rnd.Next()).Take(rnd.Next(1, 4)))
                 {
                     var e = new Enrollment { GroupId = g.Id, Note = Marker };

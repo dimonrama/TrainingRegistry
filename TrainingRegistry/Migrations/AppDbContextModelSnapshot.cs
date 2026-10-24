@@ -30,10 +30,25 @@ namespace TrainingRegistry.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("CanEditDocuments")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("CanEditOrganizations")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("CanEditPeople")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CanEnroll")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CanReports")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CanViewDocuments")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("CanViewHistory")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime>("CreatedAt")
@@ -101,8 +116,16 @@ namespace TrainingRegistry.Migrations
                     b.Property<DateTime>("At")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Details")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<int>("EntityId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("EntityTitle")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
 
                     b.Property<string>("EntityType")
                         .IsRequired()
@@ -272,6 +295,21 @@ namespace TrainingRegistry.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("ExpelReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateOnly?>("ExpelledDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("FundingSource")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Grade")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<int>("GroupId")
                         .HasColumnType("integer");
 
@@ -308,7 +346,71 @@ namespace TrainingRegistry.Migrations
 
                     b.HasIndex("Status", "NextTrainingDate");
 
+                    b.HasIndex("CertificateNumber");
+
                     b.ToTable("Enrollments");
+                });
+
+            modelBuilder.Entity("TrainingRegistry.Domain.GeneratedDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("DocDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Number")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("PersonId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId");
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("GeneratedDocuments");
                 });
 
             modelBuilder.Entity("TrainingRegistry.Domain.Organization", b =>
@@ -442,6 +544,10 @@ namespace TrainingRegistry.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("Snils")
+                        .HasMaxLength(14)
+                        .HasColumnType("character varying(14)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -461,10 +567,12 @@ namespace TrainingRegistry.Migrations
 
                     b.HasIndex("Status");
 
+                    b.HasIndex("Snils");
+
                     b.ToTable("People");
                 });
 
-            modelBuilder.Entity("TrainingRegistry.Domain.TrainingGroup", b =>
+            modelBuilder.Entity("TrainingRegistry.Domain.PersonDocument", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -479,8 +587,77 @@ namespace TrainingRegistry.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("PersonId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PersonId", "Type");
+
+                    b.ToTable("PersonDocuments");
+                });
+
+            modelBuilder.Entity("TrainingRegistry.Domain.TrainingGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CommissionMembers")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CommissionSecretary")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CuratorName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<DateOnly?>("EndDate")
                         .HasColumnType("date");
+
+                    b.Property<string>("FundingSource")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -495,6 +672,10 @@ namespace TrainingRegistry.Migrations
 
                     b.Property<int>("ProgramId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
@@ -513,6 +694,8 @@ namespace TrainingRegistry.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ProgramId");
+
+                    b.HasIndex("RegistrationNumber");
 
                     b.ToTable("Groups", (string)null);
                 });
@@ -570,6 +753,9 @@ namespace TrainingRegistry.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
+
+                    b.Property<int>("RequiredFields")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -644,6 +830,24 @@ namespace TrainingRegistry.Migrations
                     b.Navigation("Person");
                 });
 
+            modelBuilder.Entity("TrainingRegistry.Domain.GeneratedDocument", b =>
+                {
+                    b.HasOne("TrainingRegistry.Domain.TrainingGroup", "Group")
+                        .WithMany("Documents")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TrainingRegistry.Domain.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Group");
+
+                    b.Navigation("Person");
+                });
+
             modelBuilder.Entity("TrainingRegistry.Domain.Person", b =>
                 {
                     b.HasOne("TrainingRegistry.Domain.Organization", "Organization")
@@ -652,6 +856,17 @@ namespace TrainingRegistry.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("TrainingRegistry.Domain.PersonDocument", b =>
+                {
+                    b.HasOne("TrainingRegistry.Domain.Person", "Person")
+                        .WithMany("Documents")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Person");
                 });
 
             modelBuilder.Entity("TrainingRegistry.Domain.TrainingGroup", b =>
@@ -672,6 +887,8 @@ namespace TrainingRegistry.Migrations
 
             modelBuilder.Entity("TrainingRegistry.Domain.Person", b =>
                 {
+                    b.Navigation("Documents");
+
                     b.Navigation("Educations");
 
                     b.Navigation("Enrollments");
@@ -680,6 +897,8 @@ namespace TrainingRegistry.Migrations
             modelBuilder.Entity("TrainingRegistry.Domain.TrainingGroup", b =>
                 {
                     b.Navigation("Contracts");
+
+                    b.Navigation("Documents");
 
                     b.Navigation("Enrollments");
                 });

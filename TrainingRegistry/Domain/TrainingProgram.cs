@@ -38,7 +38,14 @@ public class TrainingProgram : AuditableEntity
     [Range(1, 3650, ErrorMessage = "Укажите от 1 до 3650 дней")]
     [Display(Name = "Заблаговременность уведомления, дней")]
     public int? NotifyDaysBefore { get; set; }
+    // какие поля карточки должны быть заполнены до зачисления (набор флагов)
+    [Display(Name = "Обязательные данные для зачисления")]
+    public PersonField RequiredFields { get; set; } = PersonField.None;
     public ICollection<TrainingGroup> Groups { get; set; } = new List<TrainingGroup>();
+    public override string? AuditTitle => Name;
+    // академические часы известны, только если срок задан в часах
+    [NotMapped]
+    public int? AcademicHours => DurationUnit == DurationUnit.Hours ? Duration : null;
     [NotMapped]
     public int EffectiveNotifyDays => NotifyDaysBefore ?? DefaultNotifyDaysBefore;
     [NotMapped]

@@ -34,6 +34,32 @@
                 <input asp-for="Item.EndDate" class="form-control" type="date" />
                 <span asp-validation-for="Item.EndDate" class="text-danger small"></span>
             </div>
+            <div class="col-md-4">
+                <label asp-for="Item.RegistrationNumber" class="form-label"></label>
+                <input asp-for="Item.RegistrationNumber" class="form-control" />
+                <span asp-validation-for="Item.RegistrationNumber" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.FundingSource" class="form-label"></label>
+                <select asp-for="Item.FundingSource" class="form-select" asp-items="Html.GetEnumSelectList<FundingSource>()">
+                    <option value="">— не указано —</option>
+                </select>
+                <div class="form-text">Можно уточнить для каждого обучающегося в составе группы.</div>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Item.CuratorName" class="form-label"></label>
+                <input asp-for="Item.CuratorName" class="form-control" />
+                <span asp-validation-for="Item.CuratorName" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Item.CommissionMembers" class="form-label"></label>
+                <textarea asp-for="Item.CommissionMembers" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Item.CommissionSecretary" class="form-label"></label>
+                <input asp-for="Item.CommissionSecretary" class="form-control" />
+                <span asp-validation-for="Item.CommissionSecretary" class="text-danger small"></span>
+            </div>
             <div class="col-12">
                 <label asp-for="Item.Name" class="form-label"></label>
                 <input asp-for="Item.Name" class="form-control" data-val="false" placeholder="Если оставить пустым — «Программа, дата начала»" />

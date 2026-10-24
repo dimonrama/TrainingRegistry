@@ -1,0 +1,53 @@
+@page "{personId:int}"
+@model TrainingRegistry.Pages.People.DocumentsModel
+@{
+    ViewData["Title"] = "Прикрепить документ";
+}
+
+<div class="page-head">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <div class="text-muted">@Model.PersonName</div>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="card shadow-sm">
+    <div class="card-body">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="Type" class="form-label"></label>
+                <select asp-for="Type" class="form-select" asp-items="Html.GetEnumSelectList<DocumentType>()" id="typeSelect"></select>
+            </div>
+            <div class="col-md-8" id="titleBox">
+                <label asp-for="Title" class="form-label"></label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger small"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Upload" class="form-label"></label>
+                <input asp-for="Upload" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+                <div class="form-text">PDF, JPG или PNG, не больше 10 МБ. Паспорт, СНИЛС и диплом хранятся в одном экземпляре: новый файл заменяет прежний. Номер СНИЛС вносится в карточке отдельно и от файла не зависит.</div>
+                <span asp-validation-for="Upload" class="text-danger small"></span>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Прикрепить</button>
+        <a class="btn btn-outline-secondary" asp-page="./Details" asp-route-id="@Model.PersonId">Отмена</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var select = document.getElementById('typeSelect');
+            var box = document.getElementById('titleBox');
+            // название нужно только для «Другого документа» (последний в списке)
+            function update() { box.style.display = select.selectedIndex === select.options.length - 1 ? '' : 'none'; }
+            select.addEventListener('change', update);
+            update();
+        })();
+    </script>
+}

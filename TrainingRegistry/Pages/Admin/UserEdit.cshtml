@@ -47,7 +47,27 @@
                     <input asp-for="Item.CanEditPeople" class="form-check-input" />
                     <label asp-for="Item.CanEditPeople" class="form-check-label"></label>
                 </div>
-                <div class="form-text">Просматривать данные методист может всегда. Администратор может всё.</div>
+                <div class="form-check">
+                    <input asp-for="Item.CanEnroll" class="form-check-input" />
+                    <label asp-for="Item.CanEnroll" class="form-check-label"></label>
+                </div>
+                <div class="form-check">
+                    <input asp-for="Item.CanViewDocuments" class="form-check-input" />
+                    <label asp-for="Item.CanViewDocuments" class="form-check-label"></label>
+                </div>
+                <div class="form-check">
+                    <input asp-for="Item.CanEditDocuments" class="form-check-input" />
+                    <label asp-for="Item.CanEditDocuments" class="form-check-label"></label>
+                </div>
+                <div class="form-check">
+                    <input asp-for="Item.CanReports" class="form-check-input" />
+                    <label asp-for="Item.CanReports" class="form-check-label"></label>
+                </div>
+                <div class="form-check">
+                    <input asp-for="Item.CanViewHistory" class="form-check-input" />
+                    <label asp-for="Item.CanViewHistory" class="form-check-label"></label>
+                </div>
+                <div class="form-text">Просматривать данные методист может всегда, кроме документов и СНИЛС (они доступны с правом просмотра документов). Загрузка документов включает их просмотр. Администратор может всё.</div>
             </div>
 
             <div class="col-md-4">

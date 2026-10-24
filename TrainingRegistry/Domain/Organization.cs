@@ -57,4 +57,5 @@ public class Organization : AuditableEntity
 
     // для списков и договора берём краткое название, если оно есть
     public string DisplayName => string.IsNullOrWhiteSpace(ShortName) ? FullName : ShortName;
+    public override string? AuditTitle => DisplayName;
 }

@@ -18,7 +18,8 @@ public class UsersModel : ListPageModel
     [BindProperty(SupportsGet = true)] public string Show { get; set; } = "all";
 
     public record UserRow(int Id, string Login, string FullName, UserRole Role, bool IsBlocked,
-        bool CanEditOrganizations, bool CanEditPeople, DateTime? LastLoginAt);
+        bool CanEditOrganizations, bool CanEditPeople, bool CanEnroll, bool CanViewDocuments, bool CanEditDocuments,
+        bool CanReports, bool CanViewHistory, DateTime? LastLoginAt);
 
     public PagedResult<UserRow> Result { get; private set; } = new();
 
@@ -57,7 +58,8 @@ public class UsersModel : ListPageModel
 
         Result = await query
             .Select(u => new UserRow(u.Id, u.Login, u.FullName, u.Role, u.IsBlocked, u.CanEditOrganizations,
-                u.CanEditPeople, u.LastLoginAt))
+                u.CanEditPeople, u.CanEnroll, u.CanViewDocuments, u.CanEditDocuments, u.CanReports, u.CanViewHistory,
+                u.LastLoginAt))
             .ToPagedAsync(PageNo, PageSize);
     }
 }

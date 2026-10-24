@@ -6,14 +6,17 @@ public static class AuditNames
     private static readonly Dictionary<string, string> Types = new()
     {
         ["Organization"] = "Организация",
-        ["Person"] = "Сотрудник",
+        ["Person"] = "Обучающийся",
+        ["PersonDocument"] = "Документ обучающегося",
+        ["GeneratedDocument"] = "Приказ / протокол / ведомость",
         ["Education"] = "Образование",
         ["TrainingProgram"] = "Программа обучения",
         ["TrainingGroup"] = "Группа обучения",
         ["Enrollment"] = "Запись об обучении",
         ["Contract"] = "Договор",
         ["AppUser"] = "Пользователь",
-        ["TestData"] = "Тестовые данные"
+        ["TestData"] = "Тестовые данные",
+        ["Report"] = "Отчёт"
     };
 
     public static string EntityType(string clrName) => Types.GetValueOrDefault(clrName, clrName);

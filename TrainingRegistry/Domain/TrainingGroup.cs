@@ -22,9 +22,30 @@ public class TrainingGroup : AuditableEntity
     [Display(Name = "Статус группы")]
     public GroupStatus Status { get; set; } = GroupStatus.Recruiting;
 
+    [StringLength(50)]
+    [Display(Name = "Регистрационный номер группы")]
+    public string? RegistrationNumber { get; set; }
+
+    [Display(Name = "Направление финансирования")]
+    public FundingSource? FundingSource { get; set; }
+
+    [StringLength(200)]
+    [Display(Name = "Куратор группы")]
+    public string? CuratorName { get; set; }
+
+    [Display(Name = "Члены аттестационной комиссии (по одному в строке)")]
+    public string? CommissionMembers { get; set; }
+
+    [StringLength(200)]
+    [Display(Name = "Секретарь комиссии")]
+    public string? CommissionSecretary { get; set; }
+
     [Display(Name = "Примечание")]
     public string? Note { get; set; }
 
+    public override string? AuditTitle => Name;
+
     public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
     public ICollection<Contract> Contracts { get; set; } = new List<Contract>();
+    public ICollection<GeneratedDocument> Documents { get; set; } = new List<GeneratedDocument>();
 }

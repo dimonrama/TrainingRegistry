@@ -64,7 +64,7 @@ public class IndexModel : ListPageModel
 
         return XlsxFile("Организации", "Организации",
             new[] { "Полное наименование", "Краткое наименование", "ИНН", "КПП", "ОГРН", "Юридический адрес", "Фактический адрес",
-                    "Телефон", "Электронная почта", "Контактное лицо", "Должность контактного лица", "Сотрудников" },
+                    "Телефон", "Электронная почта", "Контактное лицо", "Должность контактного лица", "Обучающихся" },
             rows.Select(r => new object?[] { r.FullName, r.ShortName, r.Inn, r.Kpp, r.Ogrn, r.LegalAddress, r.ActualAddress,
                 r.Phone, r.Email, r.ContactName, r.ContactPosition, r.Employees }));
     }

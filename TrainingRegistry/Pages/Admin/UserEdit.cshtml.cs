@@ -62,7 +62,8 @@ public class UserEditModel : PageModel
 
         await TryUpdateModelAsync(entity, nameof(Item),
             x => x.FullName, x => x.Login, x => x.Role, x => x.IsBlocked,
-            x => x.CanEditOrganizations, x => x.CanEditPeople);
+            x => x.CanEditOrganizations, x => x.CanEditPeople, x => x.CanEnroll, x => x.CanViewDocuments,
+            x => x.CanEditDocuments, x => x.CanReports, x => x.CanViewHistory);
         entity.FullName = (entity.FullName ?? "").Trim();
         entity.Login = (entity.Login ?? "").Trim();
         if (!string.IsNullOrEmpty(entity.Login))
@@ -103,6 +104,9 @@ public class UserEditModel : PageModel
             if (!otherAdmin)
                 ModelState.AddModelError(string.Empty, "Нельзя оставить систему без активного администратора");
         }
+        // загружать документы можно только тем, кто их видит
+        if (entity.CanEditDocuments) entity.CanViewDocuments = true;
+
         if (!ModelState.IsValid) return Page();
         // пароль сохраняем только хэшем
         if (passwordGiven) entity.PasswordHash = _hasher.HashPassword(entity, NewPassword!);

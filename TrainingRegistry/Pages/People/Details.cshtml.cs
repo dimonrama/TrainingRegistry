@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TrainingRegistry.Data;
 using TrainingRegistry.Domain;
+using TrainingRegistry.Infrastructure;
 using TrainingRegistry.Security;
 
 namespace TrainingRegistry.Pages.People;
@@ -11,7 +12,17 @@ public class DetailsModel : PageModel
 {
     private readonly AppDbContext _db;
 
-    public DetailsModel(AppDbContext db) => _db = db;
+    private readonly IFileStorage _storage;
+
+    public DetailsModel(AppDbContext db, IFileStorage storage)
+    {
+        _db = db;
+        _storage = storage;
+    }
+
+    public List<PersonDocument> Documents { get; private set; } = new();
+    // СНИЛС показываем целиком только тем, кому разрешён просмотр документов
+    public string? SnilsText { get; private set; }
 
     public Person Item { get; private set; } = null!;
     public string? OrganizationName { get; private set; }
@@ -42,6 +53,16 @@ public class DetailsModel : PageModel
             .OrderByDescending(e => e.GraduationYear)
             .ToListAsync();
 
+        if (User.CanViewDocuments())
+        {
+            Documents = await _db.PersonDocuments.AsNoTracking()
+                .Where(d => d.PersonId == id)
+                .OrderBy(d => d.Type).ThenByDescending(d => d.Id)
+                .ToListAsync();
+            SnilsText = person.Snils;
+        }
+        else SnilsText = ReportFields.MaskSnils(person.Snils);
+
         History = await _db.Enrollments.AsNoTracking()
             .Where(e => e.PersonId == id)
             .OrderByDescending(e => e.Group!.StartDate)
@@ -67,6 +88,22 @@ public class DetailsModel : PageModel
         return RedirectToPage(new { id });
     }
 
+    public async Task<IActionResult> OnPostDeleteDocumentAsync(int id, int documentId)
+    {
+        if (!User.CanEditDocuments()) return Forbid();
+
+        var doc = await _db.PersonDocuments.FirstOrDefaultAsync(d => d.Id == documentId && d.PersonId == id);
+        if (doc != null)
+        {
+            var path = doc.FilePath;
+            _db.PersonDocuments.Remove(doc);
+            await _db.SaveChangesAsync();
+            _storage.Delete(path);
+            TempData["Success"] = "Документ удалён";
+        }
+        return RedirectToPage(new { id });
+    }
+
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
         if (!User.CanEditPeople()) return Forbid();
@@ -76,7 +113,7 @@ public class DetailsModel : PageModel
 
         if (await _db.Enrollments.AnyAsync(e => e.PersonId == id))
         {
-            TempData["Error"] = "У сотрудника есть записи об обучении, удалить его нельзя. " +
+            TempData["Error"] = "У обучающегося есть записи об обучении, удалить его нельзя. " +
                                 "Измените статус на «Уволен» — он будет скрыт из списков.";
             return RedirectToPage(new { id });
         }
@@ -84,7 +121,7 @@ public class DetailsModel : PageModel
         _db.People.Remove(person);
         await _db.SaveChangesAsync();
 
-        TempData["Success"] = "Сотрудник удалён";
+        TempData["Success"] = "Обучающийся удалён";
         return RedirectToPage("./Index");
     }
 }

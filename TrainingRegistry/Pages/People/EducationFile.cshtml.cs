@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TrainingRegistry.Data;
 using TrainingRegistry.Infrastructure;
+using TrainingRegistry.Security;
 
 namespace TrainingRegistry.Pages.People;
 
+[Authorize(Policy = Policies.CanViewDocuments)]
 public class EducationFileModel : PageModel
 {
     private readonly AppDbContext _db;

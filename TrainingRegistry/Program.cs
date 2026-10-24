@@ -31,6 +31,10 @@ QuestPDF.Settings.License = LicenseType.Community;
 builder.Services.Configure<ContractSettings>(builder.Configuration.GetSection(ContractSettings.SectionName));
 builder.Services.AddScoped<ContractService>();
 builder.Services.AddScoped<TestDataService>();
+builder.Services.AddScoped<PersonDuplicateService>();
+builder.Services.AddScoped<ImportService>();
+builder.Services.AddScoped<GroupDocumentService>();
+builder.Services.AddScoped<ReportService>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -46,7 +50,7 @@ builder.Services
         options.Events.OnValidatePrincipal = CookieEvents.ValidateAsync;
     });
 
-// политики: только админ + отдельные права методиста на организации и сотрудников
+// политики: только админ + отдельные права методиста (организации, обучающиеся, зачисление, документы, отчёты, история)
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(Policies.AdminOnly, p => p.RequireRole(Roles.Admin));
@@ -58,6 +62,13 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(Policies.CanEditPeople, p => p.RequireAssertion(ctx =>
         ctx.User.IsInRole(Roles.Admin) ||
         ctx.User.HasClaim(AppClaims.Permission, AppClaims.PermPeople)));
+
+    // остальные права проверяем теми же методами, что и в разметке страниц
+    options.AddPolicy(Policies.CanEnroll, p => p.RequireAssertion(ctx => ctx.User.CanEnroll()));
+    options.AddPolicy(Policies.CanViewDocuments, p => p.RequireAssertion(ctx => ctx.User.CanViewDocuments()));
+    options.AddPolicy(Policies.CanEditDocuments, p => p.RequireAssertion(ctx => ctx.User.CanEditDocuments()));
+    options.AddPolicy(Policies.CanReports, p => p.RequireAssertion(ctx => ctx.User.CanReports()));
+    options.AddPolicy(Policies.CanViewHistory, p => p.RequireAssertion(ctx => ctx.User.CanViewHistory()));
 });
 
 builder.Services.AddRazorPages(options =>

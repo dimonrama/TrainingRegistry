@@ -76,11 +76,17 @@ public class LoginModel : PageModel
             new(ClaimTypes.Name, user.Login),
             new(ClaimTypes.Role, user.Role == UserRole.Admin ? Roles.Admin : Roles.Methodist),
             new(AppClaims.DisplayName, NameHelper.Display(user.FullName, user.Role)),
-            new(AppClaims.Stamp, AuthStamp.Compute(user.Role, user.CanEditOrganizations, user.CanEditPeople, user.PasswordHash))
+            new(AppClaims.Stamp, AuthStamp.Compute(user.Role, user.CanEditOrganizations, user.CanEditPeople, user.PasswordHash,
+                AuthStamp.ExtraPermissions(user.CanEnroll, user.CanViewDocuments, user.CanEditDocuments, user.CanReports, user.CanViewHistory)))
         };
         // права методиста кладём в claims, потом по ним проверяем доступ
         if (user.CanEditOrganizations) claims.Add(new Claim(AppClaims.Permission, AppClaims.PermOrganizations));
         if (user.CanEditPeople) claims.Add(new Claim(AppClaims.Permission, AppClaims.PermPeople));
+        if (user.CanEnroll) claims.Add(new Claim(AppClaims.Permission, AppClaims.PermEnroll));
+        if (user.CanViewDocuments) claims.Add(new Claim(AppClaims.Permission, AppClaims.PermViewDocuments));
+        if (user.CanEditDocuments) claims.Add(new Claim(AppClaims.Permission, AppClaims.PermEditDocuments));
+        if (user.CanReports) claims.Add(new Claim(AppClaims.Permission, AppClaims.PermReports));
+        if (user.CanViewHistory) claims.Add(new Claim(AppClaims.Permission, AppClaims.PermHistory));
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await HttpContext.SignInAsync(

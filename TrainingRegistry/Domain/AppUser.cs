@@ -28,6 +28,23 @@ public class AppUser : AuditableEntity
     [Display(Name = "Может изменять организации")]
     public bool CanEditOrganizations { get; set; }
 
-    [Display(Name = "Может изменять сотрудников")]
+    [Display(Name = "Может изменять карточки обучающихся")]
     public bool CanEditPeople { get; set; }
+
+    [Display(Name = "Может зачислять и отчислять")]
+    public bool CanEnroll { get; set; } = true;
+
+    [Display(Name = "Может просматривать документы обучающихся")]
+    public bool CanViewDocuments { get; set; } = true;
+
+    [Display(Name = "Может загружать и удалять документы обучающихся")]
+    public bool CanEditDocuments { get; set; } = true;
+
+    [Display(Name = "Может формировать документы и отчёты")]
+    public bool CanReports { get; set; } = true;
+
+    [Display(Name = "Может смотреть историю изменений")]
+    public bool CanViewHistory { get; set; }
+
+    public override string? AuditTitle => Login;
 }

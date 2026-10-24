@@ -3,6 +3,8 @@
 @{
     ViewData["Title"] = Model.Item.FullName;
     var canEdit = User.CanEditPeople();
+    var canViewDocs = User.CanViewDocuments();
+    var canEditDocs = User.CanEditDocuments();
 }
 
 <div class="page-head">
@@ -19,7 +21,7 @@
         {
             <a class="btn btn-primary" asp-page="./Edit" asp-route-id="@Model.Item.Id">Редактировать</a>
             <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Item.Id"
-                  onsubmit="return confirm('Удалить сотрудника?');">
+                  onsubmit="return confirm('Удалить обучающегося?');">
                 <button type="submit" class="btn btn-outline-danger">Удалить</button>
             </form>
         }
@@ -44,6 +46,8 @@
             <dd class="col-sm-9">@(Model.Item.Position ?? "—")</dd>
             <dt class="col-sm-3">Дата рождения</dt>
             <dd class="col-sm-9">@Fmt.Date(Model.Item.BirthDate)</dd>
+            <dt class="col-sm-3">СНИЛС</dt>
+            <dd class="col-sm-9">@(Model.SnilsText ?? "—")</dd>
             <dt class="col-sm-3">Телефон</dt>
             <dd class="col-sm-9">@(Model.Item.Phone ?? "—")</dd>
             <dt class="col-sm-3">Электронная почта</dt>
@@ -77,9 +81,13 @@
                 <td>@(e.GraduationYear?.ToString() ?? "—")</td>
                 <td>@(e.Specialty ?? "—")</td>
                 <td>
-                    @if (e.FilePath != null)
+                    @if (e.FilePath != null && canViewDocs)
                     {
                         <a asp-page="./EducationFile" asp-route-id="@e.Id" target="_blank">@(e.OriginalFileName ?? "Открыть")</a>
+                    }
+                    else if (e.FilePath != null)
+                    {
+                        <span class="text-muted">файл скрыт правами</span>
                     }
                     else
                     {
@@ -106,6 +114,49 @@
     </table>
 </div>
 
+@if (canViewDocs)
+{
+    <div class="page-head">
+        <h2 class="h4 mb-0">Документы</h2>
+        @if (canEditDocs)
+        {
+            <a class="btn btn-sm btn-primary" asp-page="./Documents" asp-route-personId="@Model.Item.Id">Прикрепить документ</a>
+        }
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <table class="table mb-0">
+            <thead>
+                <tr><th>Вид</th><th>Название</th><th>Файл</th><th>Загружен</th>@if (canEditDocs){<th></th>}</tr>
+            </thead>
+            <tbody>
+            @foreach (var d in Model.Documents)
+            {
+                <tr>
+                    <td>@d.Type.GetDisplayName()</td>
+                    <td>@(d.Title ?? "—")</td>
+                    <td><a asp-page="./DocumentFile" asp-route-id="@d.Id" target="_blank">@(d.OriginalFileName ?? "Открыть")</a></td>
+                    <td>@Fmt.DateTimeLocal(d.CreatedAt)</td>
+                    @if (canEditDocs)
+                    {
+                        <td class="text-end">
+                            <form method="post" asp-page-handler="DeleteDocument" asp-route-id="@Model.Item.Id" asp-route-documentId="@d.Id"
+                                  class="d-inline" onsubmit="return confirm('Удалить документ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Удалить</button>
+                            </form>
+                        </td>
+                    }
+                </tr>
+            }
+            @if (!Model.Documents.Any())
+            {
+                <tr><td colspan="5" class="text-center text-muted py-4">Паспорт, СНИЛС, диплом и другие документы не прикреплены</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
 <h2 class="h4 mb-3">История обучения</h2>
 <div class="card shadow-sm">
     <table class="table mb-0">
@@ -127,7 +178,7 @@
         }
         @if (!Model.History.Any())
         {
-            <tr><td colspan="7" class="text-center text-muted py-4">Сотрудник ещё не проходил обучение</td></tr>
+            <tr><td colspan="7" class="text-center text-muted py-4">Обучающийся ещё не проходил обучение</td></tr>
         }
         </tbody>
     </table>

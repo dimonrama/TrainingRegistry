@@ -50,7 +50,7 @@
 </div>
 
 <div class="page-head">
-    <h2 class="h4 mb-0">Сотрудники</h2>
+    <h2 class="h4 mb-0">Обучающиеся</h2>
     <div class="d-flex gap-2 align-items-center">
         <form method="get" class="form-check form-switch mb-0">
             <input type="checkbox" class="form-check-input" id="dismissed" name="ShowDismissed" value="true"
@@ -59,7 +59,7 @@
         </form>
         @if (canEditPeople)
         {
-            <a class="btn btn-sm btn-primary" asp-page="/People/Edit" asp-route-organizationId="@Model.Item.Id">Новый сотрудник</a>
+            <a class="btn btn-sm btn-primary" asp-page="/People/Edit" asp-route-organizationId="@Model.Item.Id">Новый обучающийся</a>
         }
     </div>
 </div>
@@ -81,7 +81,7 @@
                 {
                     <td class="text-end">
                         <form method="post" asp-page-handler="Detach" asp-route-id="@Model.Item.Id" asp-route-personId="@p.Id"
-                              onsubmit="return confirm('Открепить сотрудника от организации?');">
+                              onsubmit="return confirm('Открепить обучающегося от организации?');">
                             <button type="submit" class="btn btn-sm btn-outline-secondary">Открепить</button>
                         </form>
                     </td>
@@ -90,7 +90,7 @@
         }
         @if (!Model.Employees.Any())
         {
-            <tr><td colspan="5" class="text-center text-muted py-4">Сотрудников нет</td></tr>
+            <tr><td colspan="5" class="text-center text-muted py-4">Обучающихся нет</td></tr>
         }
         </tbody>
     </table>

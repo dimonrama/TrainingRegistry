@@ -1,0 +1,174 @@
+@page
+@using TrainingRegistry.Infrastructure
+@model TrainingRegistry.Pages.Reports.IndexModel
+@{
+    ViewData["Title"] = "Отчёты";
+}
+
+<div class="page-head">
+    <h1>Отчёты</h1>
+    <a class="btn btn-outline-success" asp-page="./Index" asp-page-handler="Summary" asp-all-route-data="Model.FilterValues()">Сводка в Excel</a>
+</div>
+
+@if (Model.FilterError != null)
+{
+    <div class="alert alert-warning">@Model.FilterError. Период не применён.</div>
+}
+
+<form method="get" class="card card-body shadow-sm mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small mb-1">ФИО или СНИЛС</label>
+            <input type="search" name="Search" value="@Model.Search" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small mb-1">Организация</label>
+            <select asp-for="OrganizationId" class="form-select" asp-items="Model.Organizations"><option value="">Все</option></select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small mb-1">Программа</label>
+            <select asp-for="ProgramId" class="form-select" asp-items="Model.Programs"><option value="">Все</option></select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small mb-1">Группа</label>
+            <select asp-for="GroupId" class="form-select" asp-items="Model.GroupItems"><option value="">Все</option></select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">Период с</label>
+            <input type="date" name="From" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">по</label>
+            <input type="date" name="To" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">Финансирование</label>
+            <select asp-for="Funding" class="form-select" asp-items="Html.GetEnumSelectList<FundingSource>()"><option value="">Любое</option></select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">Статус</label>
+            <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<EnrollmentStatus>()"><option value="">Любой</option></select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Номер удостоверения</label>
+            <input type="search" name="Certificate" value="@Model.Certificate" class="form-control" />
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary">Применить</button>
+            <a class="btn btn-link" asp-page="./Index">Сбросить</a>
+        </div>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    @{
+        var blocks = new (string Title, List<SummaryLine> Lines)[]
+        {
+            ("По программам", Model.ByProgram),
+            ("По организациям", Model.ByOrganization),
+            ("По периодам (месяц начала обучения)", Model.ByMonth)
+        };
+    }
+    @foreach (var (title, lines) in blocks)
+    {
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">@title</div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr><th></th><th class="text-end">Всего</th><th class="text-end">Обучаются</th><th class="text-end">Прошли</th><th class="text-end">Отчислены</th><th class="text-end">ГЗ</th><th class="text-end">ПД</th><th class="text-end">Не указано</th></tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var l in lines)
+                        {
+                            <tr>
+                                <td>@l.Key</td>
+                                <td class="text-end">@l.Total</td>
+                                <td class="text-end">@l.Studying</td>
+                                <td class="text-end">@l.Completed</td>
+                                <td class="text-end">@l.Expelled</td>
+                                <td class="text-end">@l.StateTask</td>
+                                <td class="text-end">@l.Business</td>
+                                <td class="text-end">@l.NoFunding</td>
+                            </tr>
+                        }
+                        @if (!lines.Any())
+                        {
+                            <tr><td colspan="8" class="text-center text-muted py-3">Нет данных</td></tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<form method="get" class="card shadow-sm mb-4">
+    <input type="hidden" name="handler" value="Export" />
+    <div class="card-header fw-semibold">Выгрузка (@Model.Total записей по текущим условиям)</div>
+    <div class="card-body">
+        @foreach (var kv in Model.FilterValues())
+        {
+            <input type="hidden" name="@kv.Key" value="@kv.Value" />
+        }
+        <div class="row">
+            @foreach (var f in Model.AvailableFields)
+            {
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="Fields" value="@f.Key" id="f_@f.Key" checked="@f.Default" />
+                        <label class="form-check-label" for="f_@f.Key">@f.Title</label>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="d-flex flex-wrap gap-3 align-items-center mt-3">
+            <div>
+                <select name="Format" class="form-select">
+                    <option value="xlsx">Excel (.xlsx)</option>
+                    <option value="docx">Word (.docx)</option>
+                </select>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="Register" value="true" id="register" />
+                <label class="form-check-label" for="register">Реестр выданных документов (только с номером удостоверения, свой набор полей)</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Выгрузить</button>
+        </div>
+        @if (!Model.CanSeePersonal)
+        {
+            <div class="form-text mt-2">Дата рождения, СНИЛС, телефон и почта доступны только с правом просмотра документов.</div>
+        }
+    </div>
+</form>
+
+<h2 class="h4 mb-3">Записи @(Model.Total > Model.Rows.Count ? $"(показаны первые {Model.Rows.Count} из {Model.Total})" : "")</h2>
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0">
+            <thead>
+                <tr><th>ФИО</th><th>Организация</th><th>Программа</th><th>Группа</th><th>Финансирование</th><th>Статус</th><th>Удостоверение</th></tr>
+            </thead>
+            <tbody>
+            @foreach (var r in Model.Rows)
+            {
+                <tr>
+                    <td><a asp-page="/People/Details" asp-route-id="@r.PersonId">@r.FullName</a></td>
+                    <td>@(r.Organization ?? "Физическое лицо")</td>
+                    <td>@r.Program</td>
+                    <td>@r.Group</td>
+                    <td>@FundingRules.Short(r.Funding)</td>
+                    <td>@r.Status.GetDisplayName()</td>
+                    <td>@(r.CertificateNumber ?? "—")</td>
+                </tr>
+            }
+            @if (!Model.Rows.Any())
+            {
+                <tr><td colspan="7" class="text-center text-muted py-4">Ничего не найдено</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

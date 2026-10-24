@@ -10,4 +10,7 @@ public abstract class AuditableEntity
     public string? UpdatedBy { get; set; }
     // логическое удаление: запись остаётся в базе, просто не показывается
     public bool IsDeleted { get; set; }
+
+    // как назвать объект в журнале; по умолчанию без названия
+    public virtual string? AuditTitle => null;
 }

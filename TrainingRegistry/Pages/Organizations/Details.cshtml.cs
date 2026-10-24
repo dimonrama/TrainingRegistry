@@ -34,11 +34,11 @@ public class DetailsModel : PageModel
         var org = await _db.Organizations.FirstOrDefaultAsync(o => o.Id == id);
         if (org == null) return NotFound();
 
-        // организацию с сотрудниками не удаляем
+        // организацию с обучающегосями не удаляем
         if (await _db.People.AnyAsync(p => p.OrganizationId == id))
         {
-            TempData["Error"] = "Нельзя удалить организацию, к которой привязаны сотрудники. " +
-                                "Сначала открепите или удалите сотрудников.";
+            TempData["Error"] = "Нельзя удалить организацию, к которой привязаны обучающиеся. " +
+                                "Сначала открепите или удалите обучающихся.";
             return RedirectToPage(new { id });
         }
 
@@ -56,14 +56,14 @@ public class DetailsModel : PageModel
         var person = await _db.People.FirstOrDefaultAsync(p => p.Id == personId && p.OrganizationId == null);
         if (person == null)
         {
-            TempData["Error"] = "Сотрудник не найден или уже привязан к организации";
+            TempData["Error"] = "Обучающийся не найден или уже привязан к организации";
             return RedirectToPage(new { id });
         }
 
         person.OrganizationId = id;
         await _db.SaveChangesAsync();
 
-        TempData["Success"] = "Сотрудник прикреплён";
+        TempData["Success"] = "Обучающийся прикреплён";
         return RedirectToPage(new { id });
     }
 
@@ -76,7 +76,7 @@ public class DetailsModel : PageModel
         {
             person.OrganizationId = null;
             await _db.SaveChangesAsync();
-            TempData["Success"] = "Сотрудник откреплён от организации";
+            TempData["Success"] = "Обучающийся откреплён от организации";
         }
 
         return RedirectToPage(new { id });

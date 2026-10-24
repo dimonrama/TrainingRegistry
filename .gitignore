@@ -490,3 +490,11 @@ App_Data/
 # Локальные настройки с паролем от базы (шаблон лежит в appsettings.example.json)
 TrainingRegistry/appsettings.json
 appsettings.Development.json
+
+# Бэкапы базы и локальные данные
+*.backup
+*.dump
+*.bak
+appsettings.*.json
+!appsettings.example.json
+TrainingRegistry/appsettings.Development.json

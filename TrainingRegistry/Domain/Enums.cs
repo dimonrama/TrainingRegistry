@@ -65,3 +65,37 @@ public enum EnrollmentStatus
     [Display(Name = "Прошел обучение")] Completed,
     [Display(Name = "Отчислен")] Expelled
 }
+
+public enum DocumentType
+{
+    [Display(Name = "Паспорт")] Passport,
+    [Display(Name = "СНИЛС")] Snils,
+    [Display(Name = "Диплом об образовании")] Diploma,
+    [Display(Name = "Другой документ")] Other
+}
+
+public enum FundingSource
+{
+    [Display(Name = "Государственное задание (ГЗ)")] StateTask,
+    [Display(Name = "Предпринимательская деятельность (ПД)")] Business
+}
+
+public enum AttestationResult
+{
+    [Display(Name = "отлично")] Excellent,
+    [Display(Name = "хорошо")] Good,
+    [Display(Name = "удовлетворительно")] Satisfactory,
+    [Display(Name = "зачтено")] Passed,
+    [Display(Name = "неудовлетворительно")] Unsatisfactory,
+    [Display(Name = "не зачтено")] Failed,
+    [Display(Name = "не явился")] Absent
+}
+
+public enum GeneratedDocKind
+{
+    [Display(Name = "Приказ о зачислении")] EnrollmentOrder,
+    [Display(Name = "Приказ об отчислении в связи с окончанием обучения")] CompletionOrder,
+    [Display(Name = "Приказ об отчислении по иным основаниям")] OtherExpulsionOrder,
+    [Display(Name = "Ведомость итоговой аттестации")] AttestationSheet,
+    [Display(Name = "Протокол аттестационной комиссии")] Protocol
+}

@@ -21,4 +21,6 @@ public class Contract : AuditableEntity
     // в базе только пути к файлам, сами файлы лежат на диске
     public string? DocxPath { get; set; }
     public string? PdfPath { get; set; }
+
+    public override string? AuditTitle => Number;
 }

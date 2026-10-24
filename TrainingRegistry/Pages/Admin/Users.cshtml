@@ -60,7 +60,12 @@
                     }
                     else
                     {
-                        <span>Организации: @(u.CanEditOrganizations ? "да" : "нет"), сотрудники: @(u.CanEditPeople ? "да" : "нет")</span>
+                        <span>
+                            Организации: @(u.CanEditOrganizations ? "да" : "нет"), обучающиеся: @(u.CanEditPeople ? "да" : "нет"),
+                            зачисление: @(u.CanEnroll ? "да" : "нет"),
+                            документы: @(u.CanEditDocuments ? "изменение" : u.CanViewDocuments ? "просмотр" : "нет"),
+                            отчёты: @(u.CanReports ? "да" : "нет"), история: @(u.CanViewHistory ? "да" : "нет")
+                        </span>
                     }
                 </td>
                 <td>

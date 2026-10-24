@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TrainingRegistry.Data;
 using TrainingRegistry.Domain;
 using TrainingRegistry.Infrastructure;
+using TrainingRegistry.Security;
 
 namespace TrainingRegistry.Pages.People;
 
@@ -18,6 +19,11 @@ public class IndexModel : ListPageModel
     [BindProperty(SupportsGet = true)] public bool IndividualsOnly { get; set; }
     [BindProperty(SupportsGet = true)] public bool ShowDismissed { get; set; }
     [BindProperty(SupportsGet = true)] public EducationLevel? Level { get; set; }
+    [BindProperty(SupportsGet = true)] public int? ProgramId { get; set; }
+    [BindProperty(SupportsGet = true)] public DateOnly? From { get; set; }
+    [BindProperty(SupportsGet = true)] public DateOnly? To { get; set; }
+    [BindProperty(SupportsGet = true)] public string? Certificate { get; set; }
+    [BindProperty(SupportsGet = true)] public FundingSource? Funding { get; set; }
 
     public record PersonRow(int Id, string LastName, string FirstName, string? MiddleName, int? OrganizationId,
         string? OrganizationName, string? Position, PersonStatus Status, string? UpdatedBy, DateTime? UpdatedAt)
@@ -27,6 +33,8 @@ public class IndexModel : ListPageModel
 
     public PagedResult<PersonRow> Result { get; private set; } = new();
     public List<SelectListItem> Organizations { get; private set; } = new();
+    public List<SelectListItem> Programs { get; private set; } = new();
+    public string? FilterError { get; private set; }
 
     private static readonly Dictionary<string, Expression<Func<Person, object?>>> Sorts = new()
     {
@@ -45,6 +53,11 @@ public class IndexModel : ListPageModel
         values["IndividualsOnly"] = IndividualsOnly.ToString().ToLowerInvariant();
         values["ShowDismissed"] = ShowDismissed.ToString().ToLowerInvariant();
         values["Level"] = Level?.ToString() ?? "";
+        values["ProgramId"] = ProgramId?.ToString() ?? "";
+        values["From"] = From?.ToString("yyyy-MM-dd") ?? "";
+        values["To"] = To?.ToString("yyyy-MM-dd") ?? "";
+        values["Certificate"] = Certificate ?? "";
+        values["Funding"] = Funding?.ToString() ?? "";
         return values;
     }
 
@@ -60,10 +73,30 @@ public class IndexModel : ListPageModel
 
         if (Level != null) query = query.Where(p => p.Educations.Any(e => e.Level == Level));
 
+        // фильтры по обучению действуют вместе: один и тот же курс должен подходить по всем условиям
+        if (ProgramId != null || From != null || To != null || !string.IsNullOrWhiteSpace(Certificate) || Funding != null)
+        {
+            var program = ProgramId;
+            var from = From;
+            var to = To;
+            var cert = Certificate?.Trim().ToLower();
+            var funding = Funding;
+            query = query.Where(p => p.Enrollments.Any(e =>
+                (program == null || e.Group!.ProgramId == program) &&
+                (from == null || (e.Group!.EndDate ?? e.Group.StartDate) >= from) &&
+                (to == null || e.Group!.StartDate <= to) &&
+                (string.IsNullOrEmpty(cert) || (e.CertificateNumber != null && e.CertificateNumber.ToLower().Contains(cert))) &&
+                (funding == null || (e.FundingSource ?? e.Group!.FundingSource) == funding)));
+        }
+
         if (!string.IsNullOrWhiteSpace(Search))
         {
             var s = Search.Trim().ToLower();
+            var digits = Snils.Digits(Search);
+            // СНИЛС ищем только тем, кто вправе видеть документы
+            var searchSnils = digits.Length >= 4 && User.CanViewDocuments();
             query = query.Where(p =>
+                (searchSnils && p.Snils != null && p.Snils.Replace("-", "").Replace(" ", "").Contains(digits)) ||
                 p.LastName.ToLower().Contains(s) ||
                 p.FirstName.ToLower().Contains(s) ||
                 (p.MiddleName != null && p.MiddleName.ToLower().Contains(s)) ||
@@ -77,6 +110,11 @@ public class IndexModel : ListPageModel
 
     public async Task OnGetAsync()
     {
+        if (From != null && To != null && From > To)
+        {
+            FilterError = "Дата начала периода позже даты окончания";
+            From = To = null;
+        }
         Result = await BuildQuery()
             .Select(p => new PersonRow(p.Id, p.LastName, p.FirstName, p.MiddleName, p.OrganizationId,
                 p.Organization != null ? (p.Organization.ShortName ?? p.Organization.FullName) : null,
@@ -90,27 +128,45 @@ public class IndexModel : ListPageModel
         Organizations = orgs
             .Select(o => new SelectListItem(o.ShortName ?? o.FullName, o.Id.ToString(), o.Id == OrganizationId))
             .ToList();
+
+        Programs = (await _db.Programs.AsNoTracking().OrderBy(p => p.Name).Select(p => new { p.Id, p.Name }).ToListAsync())
+            .Select(p => new SelectListItem(p.Name, p.Id.ToString(), p.Id == ProgramId))
+            .ToList();
     }
+
+    private record ExportRow(string LastName, string FirstName, string? MiddleName, DateOnly? BirthDate, string? Snils,
+        string? Phone, string? Email, string? Org, string? Position, PersonStatus Status, DateOnly? DismissalDate,
+        List<EducationLevel> Levels);
 
     public async Task<IActionResult> OnGetExportAsync()
     {
+        // личные данные в выгрузку попадают только у тех, кому разрешён просмотр документов
+        var personal = User.CanViewDocuments();
         var rows = await BuildQuery()
-            .Select(p => new
-            {
-                p.LastName, p.FirstName, p.MiddleName, p.BirthDate, p.Phone, p.Email,
-                Org = p.Organization != null ? (p.Organization.ShortName ?? p.Organization.FullName) : null,
-                p.Position, p.Status, p.DismissalDate,
-                Levels = p.Educations.Select(e => e.Level).ToList()
-            })
+            .Select(p => new ExportRow(p.LastName, p.FirstName, p.MiddleName, p.BirthDate, p.Snils, p.Phone, p.Email,
+                p.Organization != null ? (p.Organization.ShortName ?? p.Organization.FullName) : null,
+                p.Position, p.Status, p.DismissalDate, p.Educations.Select(e => e.Level).ToList()))
             .ToListAsync();
 
-        return XlsxFile("Сотрудники", "Сотрудники",
-            new[] { "ФИО", "Дата рождения", "Организация", "Должность", "Телефон", "Электронная почта", "Образование", "Статус", "Дата увольнения" },
-            rows.Select(r => new object?[]
-            {
-                Fmt.FullName(r.LastName, r.FirstName, r.MiddleName), r.BirthDate, r.Org ?? "Физическое лицо", r.Position,
-                r.Phone, r.Email, string.Join("; ", r.Levels.Distinct().Select(l => l.GetDisplayName())),
-                r.Status.GetDisplayName(), r.DismissalDate
-            }));
+        var headers = new List<string> { "ФИО" };
+        if (personal) headers.AddRange(new[] { "Дата рождения", "СНИЛС" });
+        headers.AddRange(new[] { "Организация", "Должность" });
+        if (personal) headers.AddRange(new[] { "Телефон", "Электронная почта" });
+        headers.AddRange(new[] { "Образование", "Статус", "Дата увольнения" });
+
+        object?[] Line(ExportRow r)
+        {
+            var cells = new List<object?> { Fmt.FullName(r.LastName, r.FirstName, r.MiddleName) };
+            if (personal) { cells.Add(r.BirthDate); cells.Add(r.Snils); }
+            cells.Add(r.Org ?? "Физическое лицо");
+            cells.Add(r.Position);
+            if (personal) { cells.Add(r.Phone); cells.Add(r.Email); }
+            cells.Add(string.Join("; ", r.Levels.Distinct().Select(l => l.GetDisplayName())));
+            cells.Add(r.Status.GetDisplayName());
+            cells.Add(r.DismissalDate);
+            return cells.ToArray();
+        }
+
+        return XlsxFile("Обучающиеся", "Обучающиеся", headers, rows.Select(r => Line(r)));
     }
 }

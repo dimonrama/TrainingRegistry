@@ -77,7 +77,7 @@ public class IndexModel : ListPageModel
         var sorted = await GetSortedAsync();
 
         return XlsxFile("Уведомления", "Повторное обучение",
-            new[] { "Сотрудник", "Организация", "Программа", "Дата прохождения", "Следующее обучение", "Осталось дней", "Срочность" },
+            new[] { "Обучающийся", "Организация", "Программа", "Дата прохождения", "Следующее обучение", "Осталось дней", "Срочность" },
             sorted.Select(r => new object?[]
             {
                 r.PersonName, r.OrganizationName ?? "Физическое лицо", r.ProgramName, r.CompletedDate, r.NextTrainingDate,

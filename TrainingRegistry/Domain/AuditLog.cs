@@ -10,4 +10,10 @@ public class AuditLog
 
     public string EntityType { get; set; } = "";
     public int EntityId { get; set; }
+
+    // название объекта на момент действия, например ФИО обучающегося
+    public string? EntityTitle { get; set; }
+
+    // что именно изменилось (старое → новое)
+    public string? Details { get; set; }
 }

@@ -1,0 +1,159 @@
+@page
+@using TrainingRegistry.Infrastructure
+@model TrainingRegistry.Pages.People.ImportModel
+@{
+    ViewData["Title"] = "Загрузка обучающихся из Excel";
+}
+
+<div class="page-head">
+    <h1>@ViewData["Title"]</h1>
+    <a class="btn btn-outline-secondary" asp-page="./Index">К списку</a>
+</div>
+
+@if (Model.Result != null)
+{
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <h2 class="h5">Результат загрузки</h2>
+            <ul class="mb-2">
+                <li>Добавлено обучающихся: <strong>@Model.Result.Added</strong></li>
+                <li>Пропущено как возможные дубли: <strong>@Model.Result.SkippedDuplicates</strong></li>
+                <li>Пропущено из-за ошибок: <strong>@Model.Result.Errors.Count</strong></li>
+            </ul>
+            @if (Model.Result.Errors.Any())
+            {
+                <div class="small fw-semibold">Строки с ошибками (в базу не попали):</div>
+                <ul class="small text-danger mb-0">
+                    @foreach (var e in Model.Result.Errors)
+                    {
+                        <li>@e</li>
+                    }
+                </ul>
+            }
+        </div>
+        <div class="card-footer d-flex gap-2">
+            <a class="btn btn-primary" asp-page="./Index">К списку обучающихся</a>
+            <a class="btn btn-outline-secondary" asp-page="./Import">Загрузить ещё файл</a>
+        </div>
+    </div>
+}
+else if (Model.Preview != null)
+{
+    var preview = Model.Preview;
+    if (preview.StructureErrors.Any())
+    {
+        <div class="alert alert-danger">
+            <strong>Файл не удалось разобрать:</strong>
+            <ul class="mb-0">
+                @foreach (var e in preview.StructureErrors)
+                {
+                    <li>@e</li>
+                }
+            </ul>
+        </div>
+        <a class="btn btn-outline-secondary" asp-page="./Import">Выбрать другой файл</a>
+    }
+    else
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h2 class="h5">Предпросмотр: @Model.FileName</h2>
+                <div class="mb-2">
+                    Готово к загрузке: <strong class="text-success">@preview.OkCount</strong>,
+                    возможные дубли: <strong class="text-warning">@preview.DuplicateCount</strong>,
+                    с ошибками: <strong class="text-danger">@preview.ErrorCount</strong>.
+                    Строки с ошибками загружены не будут.
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr><th>Строка</th><th>ФИО</th><th>Дата рождения</th><th>СНИЛС</th><th>Организация</th><th>Должность</th><th>Проверка</th></tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var r in preview.Rows)
+                        {
+                            var css = r.Status == ImportRowStatus.Error ? "table-danger" : r.Status == ImportRowStatus.Duplicate ? "table-warning" : "";
+                            <tr class="@css">
+                                <td>@r.Row.RowNumber</td>
+                                <td>@r.Row.FullName</td>
+                                <td>@Fmt.Date(r.Row.BirthDate)</td>
+                                <td>@(r.Row.Snils ?? "—")</td>
+                                <td>@(r.OrganizationName ?? r.Row.Organization ?? "—")</td>
+                                <td>@(r.Row.Position ?? "—")</td>
+                                <td>
+                                    @if (r.Status == ImportRowStatus.Ok)
+                                    {
+                                        <span class="text-success">Ошибок нет</span>
+                                    }
+                                    else if (r.Status == ImportRowStatus.Error)
+                                    {
+                                        @foreach (var p in r.Problems)
+                                        {
+                                            <div>@p</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        @foreach (var d in r.Duplicates)
+                                        {
+                                            <div>
+                                                Возможный дубль:
+                                                @if (d.PersonId > 0)
+                                                {
+                                                    <a asp-page="./Details" asp-route-id="@d.PersonId" target="_blank">@d.FullName</a>
+                                                }
+                                                else
+                                                {
+                                                    @d.FullName
+                                                }
+                                                (@d.ReasonsText)
+                                            </div>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <form method="post" asp-page-handler="Confirm" class="card-footer d-flex flex-wrap gap-3 align-items-center">
+                <input type="hidden" name="FileData" value="@Model.FileData" />
+                <input type="hidden" name="FileName" value="@Model.FileName" />
+                @if (preview.DuplicateCount > 0)
+                {
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="incl" name="IncludeDuplicates" value="true" />
+                        <label class="form-check-label" for="incl">Загрузить и строки с возможными дублями (это другие люди)</label>
+                    </div>
+                }
+                @if (preview.OkCount + preview.DuplicateCount > 0)
+                {
+                    <button type="submit" class="btn btn-primary">Подтвердить загрузку</button>
+                }
+                <a class="btn btn-outline-secondary" asp-page="./Import">Отмена</a>
+            </form>
+        </div>
+    }
+}
+else
+{
+    <form method="post" asp-page-handler="Preview" enctype="multipart/form-data" class="card shadow-sm">
+        <div class="card-body">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <p>
+                Загрузите файл Excel (.xlsx) со списком обучающихся. Сначала система покажет предпросмотр: найденные ошибки
+                (с номером строки и названием поля) и возможные дубли. В базу ничего не попадёт, пока вы не подтвердите загрузку.
+            </p>
+            <p class="mb-3">
+                Колонки: Фамилия, Имя, Отчество (или одна колонка ФИО), Дата рождения, СНИЛС, Телефон, Электронная почта,
+                Организация, ИНН организации, Должность. Обязательны фамилия и имя. Организация должна уже быть в справочнике.
+                <a asp-page="./Import" asp-page-handler="Template">Скачать шаблон</a>
+            </p>
+            <input asp-for="Upload" class="form-control" type="file" accept=".xlsx" />
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">Проверить файл</button>
+        </div>
+    </form>
+}

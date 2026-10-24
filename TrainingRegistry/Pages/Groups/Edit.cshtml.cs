@@ -57,7 +57,9 @@ public class EditModel : PageModel
 
         // привязываем только нужные поля, чтобы нельзя было подсунуть лишнее
         await TryUpdateModelAsync(entity, nameof(Item),
-            x => x.ProgramId, x => x.StartDate, x => x.EndDate, x => x.Status, x => x.Name, x => x.Note);
+            x => x.ProgramId, x => x.StartDate, x => x.EndDate, x => x.Status, x => x.Name, x => x.Note,
+            x => x.RegistrationNumber, x => x.FundingSource, x => x.CuratorName, x => x.CommissionMembers,
+            x => x.CommissionSecretary);
 
         await LoadProgramsAsync(previousProgramId);
 

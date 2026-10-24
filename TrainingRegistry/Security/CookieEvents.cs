@@ -19,11 +19,17 @@ public static class CookieEvents
             var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
             var user = await db.AppUsers.AsNoTracking()
                 .Where(u => u.Id == id)
-                .Select(u => new { u.Role, u.IsBlocked, u.CanEditOrganizations, u.CanEditPeople, u.PasswordHash })
+                .Select(u => new
+                {
+                    u.Role, u.IsBlocked, u.CanEditOrganizations, u.CanEditPeople, u.PasswordHash,
+                    u.CanEnroll, u.CanViewDocuments, u.CanEditDocuments, u.CanReports, u.CanViewHistory
+                })
                 .FirstOrDefaultAsync();
             valid = user != null
                     && !user.IsBlocked
-                    && stamp == AuthStamp.Compute(user.Role, user.CanEditOrganizations, user.CanEditPeople, user.PasswordHash);
+                    && stamp == AuthStamp.Compute(user.Role, user.CanEditOrganizations, user.CanEditPeople, user.PasswordHash,
+                        AuthStamp.ExtraPermissions(user.CanEnroll, user.CanViewDocuments, user.CanEditDocuments,
+                            user.CanReports, user.CanViewHistory));
         }
         if (!valid)
         {

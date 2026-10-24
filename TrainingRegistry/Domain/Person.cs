@@ -18,6 +18,9 @@ public class Person : AuditableEntity
     public string? MiddleName { get; set; }
     [Display(Name = "Дата рождения")]
     public DateOnly? BirthDate { get; set; }
+    [StringLength(14)]
+    [Display(Name = "СНИЛС")]
+    public string? Snils { get; set; }
     [StringLength(50)]
     [Display(Name = "Телефон")]
     public string? Phone { get; set; }
@@ -36,10 +39,12 @@ public class Person : AuditableEntity
     [Display(Name = "Дата увольнения")]
     public DateOnly? DismissalDate { get; set; }
     public ICollection<Education> Educations { get; set; } = new List<Education>();
+    public ICollection<PersonDocument> Documents { get; set; } = new List<PersonDocument>();
     public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
     [NotMapped]
     public string FullName => string.Join(" ", new[] { LastName, FirstName, MiddleName }
         .Where(s => !string.IsNullOrWhiteSpace(s)));
     [NotMapped]
     public bool IsDismissed => Status == PersonStatus.Dismissed;
+    public override string? AuditTitle => FullName;
 }

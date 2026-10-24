@@ -1,26 +1,32 @@
 @page
 @model TrainingRegistry.Pages.People.IndexModel
 @{
-    ViewData["Title"] = "Сотрудники";
+    ViewData["Title"] = "Обучающиеся";
 }
 
 <div class="page-head">
-    <h1>Сотрудники</h1>
+    <h1>Обучающиеся</h1>
     <div class="d-flex gap-2">
         <a class="btn btn-outline-success" asp-page="./Index" asp-page-handler="Export" asp-all-route-data='Model.ExportLinkValues()'>Выгрузить в Excel</a>
         @if (User.CanEditPeople())
         {
-            <a class="btn btn-primary" asp-page="./Edit">Добавить сотрудника</a>
+            <a class="btn btn-outline-primary" asp-page="./Import">Загрузить из Excel</a>
+            <a class="btn btn-primary" asp-page="./Edit">Добавить обучающегося</a>
         }
     </div>
 </div>
+
+@if (Model.FilterError != null)
+{
+    <div class="alert alert-warning">@Model.FilterError. Период не применён.</div>
+}
 
 <form method="get" class="card card-body shadow-sm mb-3">
     <div class="row g-2 align-items-end">
         <div class="col-md-4">
             <label class="form-label small mb-1">Поиск</label>
             <input type="search" name="Search" value="@Model.Search" class="form-control"
-                   placeholder="ФИО, телефон, почта, организация" />
+                   placeholder="ФИО, телефон, почта, организация, СНИЛС" />
         </div>
         <div class="col-md-3">
             <label class="form-label small mb-1">Организация</label>
@@ -36,6 +42,32 @@
         </div>
         <div class="col-md-2 d-grid">
             <button type="submit" class="btn btn-outline-primary">Применить</button>
+        </div>
+    </div>
+    <div class="row g-2 mt-1 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Программа</label>
+            <select asp-for="ProgramId" class="form-select" asp-items="Model.Programs">
+                <option value="">Любая</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">Обучение с</label>
+            <input type="date" name="From" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">по</label>
+            <input type="date" name="To" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Номер удостоверения</label>
+            <input type="search" name="Certificate" value="@Model.Certificate" class="form-control" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1">Финансирование</label>
+            <select asp-for="Funding" class="form-select" asp-items="Html.GetEnumSelectList<FundingSource>()">
+                <option value="">Любое</option>
+            </select>
         </div>
     </div>
     <div class="row g-3 mt-1">

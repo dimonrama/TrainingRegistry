@@ -11,7 +11,7 @@ public static class RetrainingQuery
             .Where(e => e.Status == EnrollmentStatus.Completed
                         && e.NextTrainingDate != null
                         && e.Person!.Status == PersonStatus.Active)
-            // берём только последнее прохождение по паре сотрудник + программа
+            // берём только последнее прохождение по паре обучающийся + программа
             .Where(e => !db.Enrollments.Any(o =>
                 o.PersonId == e.PersonId
                 && o.Group!.ProgramId == e.Group!.ProgramId

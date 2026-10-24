@@ -39,7 +39,7 @@ public class ToolsModel : PageModel
     {
         var done = await _data.SeedDemoAsync();
         TempData[done ? "Success" : "Error"] = done
-            ? "Демо-данные добавлены: организации, сотрудники, программы, группы и записи об обучении."
+            ? "Демо-данные добавлены: организации, обучающиеся, программы, группы и записи об обучении."
             : "Демо-данные не добавлены: в системе уже есть организации или программы.";
         return RedirectToPage();
     }
@@ -53,9 +53,9 @@ public class ToolsModel : PageModel
         _db.SuppressAudit = true;
         await _data.AddLoadAsync(count);
         _db.SuppressAudit = false;
-        await WriteJournalAsync($"Загрузка тестовых данных ({count} сотрудников)");
+        await WriteJournalAsync($"Загрузка тестовых данных ({count} обучающихся)");
 
-        TempData["Success"] = $"Добавлено {count} тестовых сотрудников с записями об обучении за {sw.Elapsed.TotalSeconds:F1} с.";
+        TempData["Success"] = $"Добавлено {count} тестовых обучающихся с записями об обучении за {sw.Elapsed.TotalSeconds:F1} с.";
         return RedirectToPage();
     }
 
@@ -63,8 +63,8 @@ public class ToolsModel : PageModel
     {
         var sw = Stopwatch.StartNew();
         var removed = await _data.RemoveLoadAsync();
-        await WriteJournalAsync($"Удаление тестовых данных ({removed} сотрудников)");
-        TempData["Success"] = $"Тестовые данные удалены ({removed} сотрудников) за {sw.Elapsed.TotalSeconds:F1} с.";
+        await WriteJournalAsync($"Удаление тестовых данных ({removed} обучающихся)");
+        TempData["Success"] = $"Тестовые данные удалены ({removed} обучающихся) за {sw.Elapsed.TotalSeconds:F1} с.";
         return RedirectToPage();
     }
 

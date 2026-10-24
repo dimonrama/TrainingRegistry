@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TrainingRegistry.Data;
 using TrainingRegistry.Domain;
 using TrainingRegistry.Infrastructure;
+using TrainingRegistry.Security;
 
 namespace TrainingRegistry.Pages.Groups;
 
@@ -25,12 +26,22 @@ public class DetailsModel : PageModel
 
     [BindProperty(SupportsGet = true)] public string? PersonSearch { get; set; }
     public List<string> Warnings { get; private set; } = new();
+    // чего не хватает в карточке для зачисления: пока не заполнено, зачислить нельзя
+    public List<string> BlockedMissing { get; private set; } = new();
+    public List<GeneratedDocument> GeneratedDocs { get; private set; } = new();
     public int? PendingPersonId { get; private set; }
     public string? PendingPersonName { get; private set; }
 
     public bool IsClosed => Item.Status is GroupStatus.Completed or GroupStatus.Cancelled;
     public record MemberRow(int EnrollmentId, int PersonId, string FullName, string? OrganizationName, string? Position,
-        bool Dismissed, EnrollmentStatus Status, DateOnly? CompletedDate, DateOnly? NextTrainingDate, string? CertificateNumber);
+        bool Dismissed, EnrollmentStatus Status, DateOnly? CompletedDate, DateOnly? NextTrainingDate, string? CertificateNumber,
+        FundingSource? Funding, FundingSource? OwnFunding, AttestationResult? Grade, string? ExpelReason);
+
+    public IEnumerable<SelectListItem> FundingItems(FundingSource? current)
+        => Enum.GetValues<FundingSource>().Select(f => new SelectListItem(FundingRules.Short(f), f.ToString(), f == current));
+
+    public IEnumerable<SelectListItem> GradeItems(AttestationResult? current)
+        => Enum.GetValues<AttestationResult>().Select(g => new SelectListItem(g.GetDisplayName(), g.ToString(), g == current));
 
     public IEnumerable<SelectListItem> StatusItems(EnrollmentStatus current)
         => Enum.GetValues<EnrollmentStatus>()
@@ -46,11 +57,12 @@ public class DetailsModel : PageModel
         if (!await LoadAsync(id)) return NotFound();
 
         var bytes = XlsxWriter.Create("Состав группы",
-            new[] { "ФИО", "Организация", "Должность", "Статус обучения", "Дата прохождения", "Следующее обучение", "№ удостоверения" },
+            new[] { "ФИО", "Организация", "Должность", "Финансирование", "Статус обучения", "Результат аттестации",
+                "Дата прохождения", "Следующее обучение", "№ удостоверения" },
             Members.Select(m => new object?[]
             {
-                m.FullName, m.OrganizationName ?? "Физическое лицо", m.Position, m.Status.GetDisplayName(),
-                m.CompletedDate, m.NextTrainingDate, m.CertificateNumber
+                m.FullName, m.OrganizationName ?? "Физическое лицо", m.Position, FundingRules.Short(m.Funding),
+                m.Status.GetDisplayName(), m.Grade?.GetDisplayName(), m.CompletedDate, m.NextTrainingDate, m.CertificateNumber
             }));
 
         var safeName = string.Concat(Item.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
@@ -60,6 +72,7 @@ public class DetailsModel : PageModel
     // зачисление: сначала запреты, потом предупреждения (их можно подтвердить)
     public async Task<IActionResult> OnPostEnrollAsync(int id, int personId, bool confirm)
     {
+        if (!User.CanEnroll()) return Forbid();
         var group = await _db.Groups.AsNoTracking().Include(g => g.Program).FirstOrDefaultAsync(g => g.Id == id);
         if (group == null) return NotFound();
         if (group.Status is GroupStatus.Completed or GroupStatus.Cancelled)
@@ -71,7 +84,7 @@ public class DetailsModel : PageModel
             .FirstOrDefaultAsync(p => p.Id == personId);
         if (person == null)
         {
-            TempData["Error"] = "Сотрудник не найден";
+            TempData["Error"] = "Обучающийся не найден";
             return RedirectToPage(new { id });
         }
         // дубли запрещаем
@@ -80,10 +93,25 @@ public class DetailsModel : PageModel
             TempData["Error"] = $"{person.FullName} уже зачислен в эту группу";
             return RedirectToPage(new { id });
         }
+        // обязательные для программы данные: пока их нет, зачислить нельзя
+        var docTypes = await _db.PersonDocuments.AsNoTracking().Where(d => d.PersonId == personId)
+            .Select(d => d.Type).Distinct().ToListAsync();
+        var docs = new AttachedDocs(docTypes.Contains(DocumentType.Passport), docTypes.Contains(DocumentType.Snils),
+            docTypes.Contains(DocumentType.Diploma) || person.Educations.Any(e => e.FilePath != null));
+        var missing = PersonRequirements.Missing(person, docs, group.Program!.RequiredFields);
+        if (missing.Count > 0)
+        {
+            await LoadAsync(id);
+            BlockedMissing = missing;
+            PendingPersonId = person.Id;
+            PendingPersonName = person.FullName;
+            return Page();
+        }
+
         var warnings = new List<string>();
         // уволенный - только предупреждение
         if (person.IsDismissed)
-            warnings.Add($"Сотрудник уволен ({Fmt.Date(person.DismissalDate)}).");
+            warnings.Add($"Обучающийся уволен ({Fmt.Date(person.DismissalDate)}).");
 
         var required = group.Program!.RequiredEducation;
         // образование не подтверждено - тоже только предупреждение
@@ -97,7 +125,7 @@ public class DetailsModel : PageModel
             PendingPersonName = person.FullName;
             return Page();
         }
-        _db.Enrollments.Add(new Enrollment { PersonId = personId, GroupId = id });
+        _db.Enrollments.Add(new Enrollment { PersonId = personId, GroupId = id, FundingSource = group.FundingSource });
         try
         {
             await _db.SaveChangesAsync();
@@ -113,8 +141,9 @@ public class DetailsModel : PageModel
         return RedirectToPage(new { id });
     }
     public async Task<IActionResult> OnPostStatusAsync(int id, int enrollmentId, EnrollmentStatus status,
-        DateOnly? completedDate, string? certificate)
+        DateOnly? completedDate, string? certificate, FundingSource? funding, AttestationResult? grade)
     {
+        if (!User.CanEnroll()) return Forbid();
         var enrollment = await _db.Enrollments
             .Include(e => e.Group).ThenInclude(g => g!.Program)
             .Include(e => e.Person)
@@ -126,6 +155,9 @@ public class DetailsModel : PageModel
             TempData["Error"] = "Номер удостоверения слишком длинный (не более 100 символов)";
             return RedirectToPage(new { id });
         }
+        enrollment.FundingSource = funding;
+        enrollment.Grade = grade;
+
         // при "Прошел обучение" ставим дату и считаем следующее обучение
         if (status == EnrollmentStatus.Completed)
         {
@@ -137,6 +169,8 @@ public class DetailsModel : PageModel
                 return RedirectToPage(new { id });
             }
             enrollment.MarkCompleted(date, enrollment.Group!.Program!);
+            enrollment.ExpelledDate = null;
+            enrollment.ExpelReason = null;
             enrollment.CertificateNumber = certificate;
             var next = enrollment.NextTrainingDate;
             TempData["Success"] = next == null
@@ -145,6 +179,13 @@ public class DetailsModel : PageModel
         }
         else
         {
+            // дату отчисления ставим один раз; если вернули из отчисленных - очищаем
+            if (status == EnrollmentStatus.Expelled) enrollment.ExpelledDate ??= Fmt.Today();
+            else
+            {
+                enrollment.ExpelledDate = null;
+                enrollment.ExpelReason = null;
+            }
             enrollment.Status = status;
             enrollment.CompletedDate = null;
             enrollment.NextTrainingDate = null;
@@ -156,6 +197,7 @@ public class DetailsModel : PageModel
     }
     public async Task<IActionResult> OnPostRemoveAsync(int id, int enrollmentId)
     {
+        if (!User.CanEnroll()) return Forbid();
         var enrollment = await _db.Enrollments.Include(e => e.Person)
             .FirstOrDefaultAsync(e => e.Id == enrollmentId && e.GroupId == id);
         if (enrollment == null) return NotFound();
@@ -211,12 +253,16 @@ public class DetailsModel : PageModel
                 e.Person!.LastName, e.Person.FirstName, e.Person.MiddleName,
                 Org = e.Person.Organization != null ? (e.Person.Organization.ShortName ?? e.Person.Organization.FullName) : null,
                 e.Person.Position, PStatus = e.Person.Status,
-                EStatus = e.Status, e.CompletedDate, e.NextTrainingDate, e.CertificateNumber
+                EStatus = e.Status, e.CompletedDate, e.NextTrainingDate, e.CertificateNumber,
+                e.FundingSource, e.Grade, e.ExpelReason
             })
             .ToListAsync();
         Members = rows.Select(r => new MemberRow(r.Id, r.PersonId, Fmt.FullName(r.LastName, r.FirstName, r.MiddleName),
             r.Org, r.Position, r.PStatus == PersonStatus.Dismissed, r.EStatus, r.CompletedDate, r.NextTrainingDate,
-            r.CertificateNumber)).ToList();
+            r.CertificateNumber, FundingRules.Effective(group.FundingSource, r.FundingSource), r.FundingSource, r.Grade,
+            r.ExpelReason)).ToList();
+        GeneratedDocs = await _db.GeneratedDocuments.AsNoTracking().Where(d => d.GroupId == id)
+            .OrderByDescending(d => d.Id).Take(30).ToListAsync();
         Customers = await _contracts.GetCustomersAsync(id);
         if (!string.IsNullOrWhiteSpace(PersonSearch) && !IsClosed)
         {

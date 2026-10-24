@@ -13,14 +13,23 @@ public class EditModel : PageModel
     public TrainingProgram Item { get; set; } = new();
     public bool IsNew { get; set; }
 
+    // отмеченные обязательные поля; на странице это набор флажков
+    [BindProperty] public List<PersonField> Required { get; set; } = new();
+
     public async Task<IActionResult> OnGetAsync(int? id)
     {
         IsNew = id == null;
-        if (id == null) return Page();
+        if (id == null)
+        {
+            // для новой программы сразу предлагаем минимум для документов об обучении
+            Required = new List<PersonField> { PersonField.BirthDate, PersonField.Snils };
+            return Page();
+        }
         var program = await _db.Programs.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
         if (program == null) return NotFound();
 
         Item = program;
+        Required = PersonRequirements.All.Where(f => program.RequiredFields.HasFlag(f)).ToList();
         return Page();
     }
     public async Task<IActionResult> OnPostAsync(int? id)
@@ -42,6 +51,8 @@ public class EditModel : PageModel
             x => x.Name, x => x.Description, x => x.Price, x => x.RequiredEducation,
             x => x.Recurrence, x => x.CustomMonths, x => x.Duration, x => x.DurationUnit,
             x => x.Status, x => x.NotifyDaysBefore);
+        entity.RequiredFields = Required.Where(f => PersonRequirements.All.Contains(f))
+            .Aggregate(PersonField.None, (acc, f) => acc | f);
         // количество месяцев нужно только для произвольного срока
         if (entity.Recurrence == Recurrence.Custom)
         {
