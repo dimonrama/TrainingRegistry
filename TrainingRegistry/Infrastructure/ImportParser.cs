@@ -25,6 +25,8 @@ public class ParsedRow
     public string? OrganizationInn { get; set; }
     public string? Position { get; set; }
     public List<RowError> Errors { get; } = new();
+    // замечания, которые не мешают загрузке
+    public List<string> Warnings { get; } = new();
 
     public string FullName => Fmt.FullName(LastName, FirstName, MiddleName);
     public PersonKey ToKey() => new(0, LastName, FirstName, MiddleName, BirthDate, Snils, Email);
@@ -191,7 +193,12 @@ public static class ImportParser
         {
             var error = Snils.Validate(snils);
             if (error != null) row.Errors.Add(new RowError("СНИЛС", error));
-            else row.Snils = Snils.Normalize(snils);
+            else
+            {
+                row.Snils = Snils.Normalize(snils);
+                var warning = Snils.ControlSumWarning(snils);
+                if (warning != null) row.Warnings.Add(warning);
+            }
         }
 
         if (row.Email != null && (row.Email.Length > 200 || !EmailRegex.IsMatch(row.Email)))

@@ -110,6 +110,13 @@ else if (Model.Preview != null)
                                             </div>
                                         }
                                     }
+                                    @if (r.Status != ImportRowStatus.Error)
+                                    {
+                                        @foreach (var w in r.Row.Warnings)
+                                        {
+                                            <div class="text-warning small">@w</div>
+                                        }
+                                    }
                                 </td>
                             </tr>
                         }

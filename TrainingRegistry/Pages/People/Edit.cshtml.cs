@@ -79,7 +79,7 @@ public class EditModel : PageModel
         if (entity.BirthDate != null && entity.BirthDate > DateOnly.FromDateTime(DateTime.Today))
             ModelState.AddModelError("Item.BirthDate", "Дата рождения не может быть в будущем");
 
-        // СНИЛС приводим к единому виду и проверяем контрольное число
+        // СНИЛС приводим к единому виду; контрольное число только подсвечиваем
         if (!string.IsNullOrWhiteSpace(entity.Snils))
         {
             var snilsError = Snils.Validate(entity.Snils);
@@ -130,6 +130,8 @@ public class EditModel : PageModel
         }
 
         TempData["Success"] = id == null ? "Обучающийся добавлен" : "Изменения сохранены";
+        var sumWarning = Snils.ControlSumWarning(entity.Snils);
+        if (sumWarning != null) TempData["Warning"] = sumWarning;
         return RedirectToPage("./Details", new { id = entity.Id });
     }
 

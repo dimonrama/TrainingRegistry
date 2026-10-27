@@ -15,7 +15,7 @@ public static class Snils
             : value.Trim();
     }
 
-    // null - номер в порядке, иначе текст ошибки для пользователя
+    // null - формат в порядке, иначе текст ошибки; контрольное число здесь не проверяется
     public static string? Validate(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
@@ -23,8 +23,16 @@ public static class Snils
             return "СНИЛС может содержать только цифры, пробелы и дефисы";
         var d = Digits(value);
         if (d.Length != 11) return "СНИЛС должен состоять из 11 цифр";
-        if (!ControlSumIsValid(d)) return "Контрольное число СНИЛС не сходится, проверьте номер на опечатки";
         return null;
+    }
+
+    // не запрещает сохранение: номер с опечаткой можно исправить позже по документу
+    public static string? ControlSumWarning(string? value)
+    {
+        var d = Digits(value);
+        return d.Length == 11 && !ControlSumIsValid(d)
+            ? "Контрольное число СНИЛС не сходится, возможно опечатка. Сверьте номер с документом"
+            : null;
     }
 
     public static bool ControlSumIsValid(string digits)
